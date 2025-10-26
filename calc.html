@@ -131,9 +131,7 @@
         </div>
     </div>
     <div style="margin-top:12px;display:flex;gap:12px;align-items:center">
-        <button id="updateBtn">Update preview</button>
-        <button id="exportSVG">Export flat-panel SVG</button>
-        <div class="small">Tip: change values then click Update preview.</div>
+        <div class="small">Views update automatically as you change values.</div>
     </div>
 
     <div class="preview">
@@ -500,8 +498,6 @@
             const a = document.createElement('a'); a.href = url; a.download = 'ufo_panels.svg'; document.body.appendChild(a); a.click(); a.remove();
         }
 
-        document.getElementById('updateBtn').addEventListener('click', render);
-        document.getElementById('exportSVG').addEventListener('click', exportSVG);
         // live updates
         // Auto-update on all parameter changes
         const allInputs = ['smallDiameter', 'mainOuterDiameter', 'mainInnerDiameter', 'topConeHeight', 'mainUpperHeight', 'cylinderHeight', 'mainLowerHeight', 'thickness', 'tabWidth', 'nSmall', 'nMain', 'holeDia', 'holeSpacing'];
