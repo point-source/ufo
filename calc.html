@@ -50,7 +50,7 @@
 
         .preview {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin-top: 12px
         }
@@ -143,10 +143,6 @@
             <h3>Side view</h3>
             <svg id="svgSide" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid meet"></svg>
         </div>
-        <div class="panel">
-            <h3>3D View</h3>
-            <div id="threejs-container" style="width: 100%; height: 400px; border: 1px solid #ccc;"></div>
-        </div>
     </div>
 
     <div class="shapes panel">
@@ -165,7 +161,6 @@
             main panels are trapezoids.</p>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
         function mm(n) { return Number(n) }
         function updateTotalHeight() {
@@ -279,7 +274,6 @@
             const c = compute();
             renderTop(c);
             renderSide(c);
-            render3D(c);
             renderShapesTable(c);
         }
 
@@ -416,215 +410,6 @@
             svg.appendChild(textEl(10, 35, `Top: ${c.hTopCone}mm, Upper: ${c.hMainUpper}mm, Cyl: ${c.hCylinder}mm, Lower: ${c.hMainLower}mm`));
         }
 
-        // Three.js 3D rendering
-        let scene, camera, renderer, controls;
-
-        function init3D() {
-            const container = document.getElementById('threejs-container');
-            if (!container) return;
-
-            // Clear existing content
-            container.innerHTML = '';
-
-            // Scene setup
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xf0f0f0);
-
-            // Camera setup
-            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(0, 0, 80);
-            camera.lookAt(0, 0, 0);
-
-            // Renderer setup
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            container.appendChild(renderer.domElement);
-
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(50, 50, 50);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            scene.add(directionalLight);
-
-            // Simple orbit controls (mouse interaction)
-            controls = {
-                mouseX: 0,
-                mouseY: 0,
-                targetRotationX: 0,
-                targetRotationY: 0,
-                rotationX: 0,
-                rotationY: 0
-            };
-
-            // Mouse interaction
-            let isMouseDown = false;
-            container.addEventListener('mousedown', (e) => {
-                isMouseDown = true;
-                controls.mouseX = e.clientX;
-                controls.mouseY = e.clientY;
-            });
-
-            container.addEventListener('mousemove', (e) => {
-                if (isMouseDown) {
-                    const deltaX = e.clientX - controls.mouseX;
-                    const deltaY = e.clientY - controls.mouseY;
-                    controls.targetRotationY += deltaX * 0.01;
-                    controls.targetRotationX += deltaY * 0.01;
-                    controls.mouseX = e.clientX;
-                    controls.mouseY = e.clientY;
-                }
-            });
-
-            container.addEventListener('mouseup', () => {
-                isMouseDown = false;
-            });
-
-            container.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                camera.position.z += e.deltaY * 0.1;
-                camera.position.z = Math.max(30, Math.min(150, camera.position.z));
-            });
-
-            // Handle window resize
-            function handleResize() {
-                const width = container.clientWidth;
-                const height = container.clientHeight;
-
-                camera.aspect = width / height;
-                camera.updateProjectionMatrix();
-                renderer.setSize(width, height);
-            }
-
-            window.addEventListener('resize', handleResize);
-
-            // Animation loop
-            function animate() {
-                requestAnimationFrame(animate);
-
-                // Smooth rotation
-                controls.rotationX += (controls.targetRotationX - controls.rotationX) * 0.1;
-                controls.rotationY += (controls.targetRotationY - controls.rotationY) * 0.1;
-
-                // Rotate the scene
-                scene.rotation.x = controls.rotationX;
-                scene.rotation.y = controls.rotationY;
-
-                renderer.render(scene, camera);
-            }
-            animate();
-        }
-
-        function render3D(c) {
-            if (!scene) {
-                init3D();
-            }
-
-            // Clear existing objects
-            while (scene.children.length > 0) {
-                if (scene.children[0].type === 'AmbientLight' || scene.children[0].type === 'DirectionalLight') {
-                    break;
-                }
-                scene.remove(scene.children[0]);
-            }
-
-            // Calculate optimal scale to fit UFO in view
-            const maxDimension = Math.max(c.dMainInner, c.H);
-            const scale = 0.8 / (maxDimension * 0.01); // Scale to fit 80% of view
-
-            // Auto-position camera to fit the object
-            const objectHeight = c.H * scale;
-            const objectRadius = c.R_mainInner * scale;
-            const optimalDistance = Math.max(objectHeight, objectRadius) * 2.5;
-            camera.position.z = Math.max(optimalDistance, 30);
-            const material = new THREE.MeshLambertMaterial({
-                color: 0x888888,
-                transparent: true,
-                opacity: 0.8
-            });
-            const windowMaterial = new THREE.MeshLambertMaterial({
-                color: 0x87CEEB,
-                transparent: true,
-                opacity: 0.9
-            });
-
-            // Create UFO sections
-            const group = new THREE.Group();
-
-            // Main lower cone
-            const lowerConeGeometry = new THREE.ConeGeometry(
-                c.R_mainOuter * scale,
-                c.hMainLower * scale,
-                32,
-                1,
-                true
-            );
-            const lowerCone = new THREE.Mesh(lowerConeGeometry, material);
-            lowerCone.position.y = -c.hMainLower * scale / 2;
-            group.add(lowerCone);
-
-            // Cylinder
-            const cylinderGeometry = new THREE.CylinderGeometry(
-                c.R_mainInner * scale,
-                c.R_mainInner * scale,
-                c.hCylinder * scale,
-                32
-            );
-            const cylinder = new THREE.Mesh(cylinderGeometry, windowMaterial);
-            cylinder.position.y = c.hCylinder * scale / 2;
-            group.add(cylinder);
-
-            // Main upper cone
-            const upperConeGeometry = new THREE.ConeGeometry(
-                c.R_mainOuter * scale,
-                c.hMainUpper * scale,
-                32,
-                1,
-                true
-            );
-            const upperCone = new THREE.Mesh(upperConeGeometry, material);
-            upperCone.position.y = c.hCylinder * scale + c.hMainUpper * scale / 2;
-            upperCone.rotation.x = Math.PI; // Flip to point up
-            group.add(upperCone);
-
-            // Top cone
-            const topConeGeometry = new THREE.ConeGeometry(
-                c.R_small * scale,
-                c.hTopCone * scale,
-                32,
-                1,
-                true
-            );
-            const topCone = new THREE.Mesh(topConeGeometry, material);
-            topCone.position.y = c.hCylinder * scale + c.hMainUpper * scale + c.hTopCone * scale / 2;
-            topCone.rotation.x = Math.PI; // Flip to point up
-            group.add(topCone);
-
-            // Add windows to cylinder
-            if (c.windowPositions && c.windowPositions.length > 0) {
-                for (const window of c.windowPositions) {
-                    const windowGeometry = new THREE.SphereGeometry(c.holeDia * scale / 2, 16, 16);
-                    const windowMesh = new THREE.Mesh(windowGeometry, new THREE.MeshLambertMaterial({
-                        color: 0x000000,
-                        transparent: true,
-                        opacity: 0.8
-                    }));
-
-                    const x = Math.cos(window.angle) * c.R_mainInner * scale;
-                    const z = Math.sin(window.angle) * c.R_mainInner * scale;
-                    windowMesh.position.set(x, c.hCylinder * scale / 2, z);
-                    group.add(windowMesh);
-                }
-            }
-
-            scene.add(group);
-        }
 
         function renderShapesTable(c) {
             const tbody = document.getElementById('shapesTable'); tbody.innerHTML = '';
