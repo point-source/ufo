@@ -354,18 +354,18 @@
             const hCylinder = c.hCylinder * scaleY;
             const hMainLower = c.hMainLower * scaleY;
 
-            // Position from bottom up
+            // Position from bottom up (correct stacking order)
             const baseY = H - margin;
-            const mainLowerTopY = baseY - hMainLower;
-            const cylinderTopY = mainLowerTopY - hCylinder;
-            const mainUpperTopY = cylinderTopY - hMainUpper;
-            const topConeTopY = mainUpperTopY - hTopCone;
+            const cylinderBottomY = baseY - hMainLower; // Main lower cone ends here
+            const cylinderTopY = cylinderBottomY - hCylinder; // Cylinder ends here
+            const mainUpperTopY = cylinderTopY - hMainUpper; // Main upper cone ends here
+            const topConeTopY = mainUpperTopY - hTopCone; // Top cone ends here
 
             // Draw main lower cone (trapezoid from main inner to main outer)
             const mainLowerTrapezoid = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             mainLowerTrapezoid.setAttribute('points',
-                `${centerX - rMainInner},${cylinderTopY} ` +
-                `${centerX + rMainInner},${cylinderTopY} ` +
+                `${centerX - rMainInner},${cylinderBottomY} ` +
+                `${centerX + rMainInner},${cylinderBottomY} ` +
                 `${centerX + rMainOuter},${baseY} ` +
                 `${centerX - rMainOuter},${baseY}`
             );
