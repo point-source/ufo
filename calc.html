@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>UFO Parametric Cutter (metric)</title>
+    <style>
+        body {
+            font-family: system-ui, Segoe UI, Roboto, Arial;
+            margin: 18px;
+            color: #111
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+            max-width: 1200px
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 6px
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 6px 8px;
+            font-size: 14px
+        }
+
+        .row {
+            margin-bottom: 8px
+        }
+
+        .panel {
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 8px;
+            background: #fafafa
+        }
+
+        .flex {
+            display: flex;
+            gap: 12px
+        }
+
+        .preview {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px
+        }
+
+        svg {
+            border: 1px solid #ccc;
+            background: white;
+            width: 100%;
+            height: 360px
+        }
+
+        .shapes {
+            margin-top: 12px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        td,
+        th {
+            padding: 6px;
+            border: 1px solid #eee;
+            font-size: 13px
+        }
+
+        button {
+            padding: 8px 12px;
+            font-size: 14px
+        }
+
+        .small {
+            font-size: 12px;
+            color: #555
+        }
+    </style>
+</head>
+
+<body>
+    <h1>UFO parametric cutter — metric (mm)</h1>
+    <p class="small">Interactive single-file generator: enter sizes (mm), adjust panels, and see preview + flat panel
+        shapes and counts. Material thickness fixed to 5 mm (foam board) — suitable for hand-fitting and taping.</p>
+    <div class="controls panel">
+        <div>
+            <div class="row"><label>Total diameter (mm)</label><input id="totalDiameter" type="number" value="800">
+            </div>
+            <div class="row"><label>Total height (mm)</label><input id="totalHeight" type="number" value="160"></div>
+            <div class="row"><label>Small top diameter (mm)</label><input id="smallDiameter" type="number" value="320">
+            </div>
+            <div class="row"><label>Small top height (mm)</label><input id="smallHeight" type="number" value="40"></div>
+        </div>
+        <div>
+            <div class="row"><label>Main ring height (mm) — (will be totalHeight - smallHeight)</label><input
+                    id="mainHeight" type="number" value="120" readonly></div>
+            <div class="row"><label>Material thickness (mm)</label><input id="thickness" type="number" value="5"></div>
+            <div class="row"><label>Glue tab width (mm)</label><input id="tabWidth" type="number" value="12"></div>
+        </div>
+        <div>
+            <div class="row"><label>Small-top panel count (N)</label><input id="nSmall" type="number" value="16"
+                    min="3"></div>
+            <div class="row"><label>Main-ring panel count (N)</label><input id="nMain" type="number" value="32" min="3">
+            </div>
+            <div class="row"><label>Hole diameter for windows (mm)</label><input id="holeDia" type="number"
+                    value="25.4"></div>
+            <div class="row"><label>Hole spacing (mm) - minimum center-to-center (auto-fit if 0)</label><input
+                    id="holeSpacing" type="number" value="0"></div>
+        </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:12px;align-items:center">
+        <button id="updateBtn">Update preview</button>
+        <button id="exportSVG">Export flat-panel SVG</button>
+        <div class="small">Tip: change values then click Update preview.</div>
+    </div>
+
+    <div class="preview">
+        <div class="panel">
+            <h3>Top-down</h3>
+            <svg id="svgTop" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="panel">
+            <h3>Side view</h3>
+            <svg id="svgSide" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="panel">
+            <h3>Isometric-ish</h3>
+            <svg id="svgIso" viewBox="0 0 1000 800" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+    </div>
+
+    <div class="shapes panel">
+        <h3>Unique flat shapes and counts</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Shape</th>
+                    <th>Count</th>
+                    <th>Dimensions (mm)</th>
+                </tr>
+            </thead>
+            <tbody id="shapesTable"></tbody>
+        </table>
+        <p class="small">Each panel includes one glue tab (on one side). The small-top panels are triangular/trapezoid;
+            main panels are trapezoids.</p>
+    </div>
+
+    <script>
+        function mm(n) { return Number(n) }
+        function updateMainHeight() {
+            const totalH = mm(document.getElementById('totalHeight').value);
+            const smallH = mm(document.getElementById('smallHeight').value);
+            const mainH = Math.max(1, totalH - smallH);
+            document.getElementById('mainHeight').value = Math.round(mainH);
+        }
+
+        function compute() {
+            const D = mm(document.getElementById('totalDiameter').value);
+            const H = mm(document.getElementById('totalHeight').value);
+            const dSmall = mm(document.getElementById('smallDiameter').value);
+            const hSmall = mm(document.getElementById('smallHeight').value);
+            const hMain = mm(document.getElementById('mainHeight').value);
+            const t = mm(document.getElementById('thickness').value);
+            const tabW = mm(document.getElementById('tabWidth').value);
+            const nSmall = Math.max(3, Math.round(mm(document.getElementById('nSmall').value)));
+            const nMain = Math.max(3, Math.round(mm(document.getElementById('nMain').value)));
+            const holeDia = mm(document.getElementById('holeDia').value);
+            const holeSpacing = mm(document.getElementById('holeSpacing').value);
+
+            // Radii
+            const R_outer = D / 2;
+            const R_small = dSmall / 2;
+            const R_inner = R_small; // main ring inner radius sits against small top
+            const R_mid = (R_inner + R_outer) / 2;
+
+            // For panels: straight (flattened) widths approximated by arc lengths at radii
+            const arcSmall = (2 * Math.PI * R_small) / nSmall; // outer arc length for small panels
+            // small panels: top width ~0 (center) bottom width = arcSmall
+            const smallPanel = {
+                type: 'small',
+                count: nSmall,
+                topWidth: 0,
+                bottomWidth: arcSmall,
+                height: hSmall,
+                tabWidth: tabW
+            };
+
+            const arcInner = (2 * Math.PI * R_inner) / nMain;
+            const arcOuter = (2 * Math.PI * R_outer) / nMain;
+            const mainPanel = {
+                type: 'main',
+                count: nMain,
+                topWidth: arcInner,
+                bottomWidth: arcOuter,
+                height: hMain,
+                tabWidth: tabW
+            };
+
+            // Holes around main ring: fit on mid-radius
+            const circMid = 2 * Math.PI * R_mid;
+            let holeCount = 0;
+            if (holeDia > 0) {
+                if (holeSpacing > 0) {
+                    holeCount = Math.floor(circMid / (holeDia + holeSpacing));
+                } else {
+                    holeCount = Math.floor(circMid / (holeDia * 1.6)); // default spacing factor
+                }
+                holeCount = Math.max(0, holeCount);
+            }
+
+            return { D, H, dSmall, hSmall, hMain: t ? hMain : hMain, t, tabW, R_outer, R_small, R_inner, R_mid, smallPanel, mainPanel, holeCount, holeDia, circMid };
+        }
+
+        function render() {
+            updateMainHeight();
+            const c = compute();
+            renderTop(c);
+            renderSide(c);
+            renderIso(c);
+            renderShapesTable(c);
+        }
+
+        function renderTop(c) {
+            const svg = document.getElementById('svgTop');
+            clear(svg);
+            const W = 1000, H = 1000; const cx = W / 2, cy = H / 2;
+            const scale = (W * 0.9) / (c.D);
+            // outer circle
+            const outerR = c.R_outer * scale;
+            const innerR = c.R_small * scale;
+            svg.appendChild(circle(cx, cy, outerR, '#eee')); // outer
+            svg.appendChild(circle(cx, cy, innerR, '#ddd'));
+            // divisions for main
+            for (let i = 0; i < c.mainPanel.count; i++) {
+                const a1 = (2 * Math.PI * i) / c.mainPanel.count - Math.PI / 2;
+                const a2 = (2 * Math.PI * (i + 1)) / c.mainPanel.count - Math.PI / 2;
+                const x1 = cx + Math.cos(a1) * outerR; const y1 = cy + Math.sin(a1) * outerR;
+                const x2 = cx + Math.cos(a2) * outerR; const y2 = cy + Math.sin(a2) * outerR;
+                svg.appendChild(line(cx, cy, x1, y1, '#bbb'));
+            }
+            // small divisions
+            for (let i = 0; i < c.smallPanel.count; i++) {
+                const a1 = (2 * Math.PI * i) / c.smallPanel.count - Math.PI / 2;
+                const a2 = (2 * Math.PI * (i + 1)) / c.smallPanel.count - Math.PI / 2;
+                const x1 = cx + Math.cos(a1) * innerR; const y1 = cy + Math.sin(a1) * innerR;
+                svg.appendChild(line(cx, cy, x1, y1, '#bbb'));
+            }
+            // hole indications on mid radius
+            const midR = c.R_mid * scale;
+            for (let i = 0; i < c.holeCount; i++) {
+                const a = (2 * Math.PI * i) / c.holeCount - Math.PI / 2;
+                const x = cx + Math.cos(a) * midR; const y = cy + Math.sin(a) * midR;
+                svg.appendChild(circle(x, y, (c.holeDia / 2) * scale, '#fff', 'black', 0.8));
+            }
+            // labels
+            svg.appendChild(textEl(12, 20, 'Total Ø = ' + c.D + ' mm'));
+        }
+
+        function renderSide(c) {
+            const svg = document.getElementById('svgSide'); clear(svg);
+            const W = 1000, H = 400; const margin = 60;
+            const scaleX = (W - 2 * margin) / (c.D);
+            const scaleY = (H - 2 * margin) / (c.hSmall + c.hMain + 20);
+            const baseX = margin, baseY = H / 2 + 40;
+            // Draw main panel as trapezoid stacked
+            const rIn = c.R_inner; const rOut = c.R_outer;
+            const topWidth = c.mainPanel.topWidth * scaleX; const bottomWidth = c.mainPanel.bottomWidth * scaleX;
+            const ph = c.hMain * scaleY;
+            const centerX = W / 2;
+            // draw top small skirt
+            const smallW = c.smallPanel.bottomWidth * scaleX;
+            const smallH = c.smallPanel.height * scaleY;
+            // side outline
+            const outerHalf = (bottomWidth / 2);
+            const innerHalf = (topWidth / 2);
+            const sx = centerX - outerHalf; const sy = baseY - ph / 2;
+            // draw trapezoid
+            const p = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            p.setAttribute('points', `${centerX - innerHalf},${sy - smallH / 2} ${centerX + innerHalf},${sy - smallH / 2} ${centerX + outerHalf},${sy + ph - smallH / 2} ${centerX - outerHalf},${sy + ph - smallH / 2}`);
+            p.setAttribute('fill', '#f6f6f6'); p.setAttribute('stroke', '#bbb'); svg.appendChild(p);
+            // small top triangle stack
+            const smallHalf = smallW / 2;
+            const sp = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            sp.setAttribute('points', `${centerX},${sy - smallH / 2 - 0} ${centerX + smallHalf},${sy - smallH / 2} ${centerX - smallHalf},${sy - smallH / 2}`);
+            sp.setAttribute('fill', '#eee'); sp.setAttribute('stroke', '#bbb'); svg.appendChild(sp);
+            svg.appendChild(textEl(10, 20, 'Side view — heights scaled'));
+        }
+
+        function renderIso(c) {
+            const svg = document.getElementById('svgIso'); clear(svg);
+            const W = 1000, H = 800; const cx = 300, cy = 380; const scale = 0.6 * (W * 0.001);
+            // We'll draw a simple oblique projection (cabinet) for rings
+            const proj = (x, y, z) => {
+                const sx = cx + x - z * 0.5;
+                const sy = cy - y - z * 0.5 * 0.5;
+                return [sx, sy];
+            };
+            // Draw outer rim ellipse and inner
+            const R_out = c.R_outer; const R_in = c.R_small;
+            // simplified: draw top ellipse
+            const ex = 220; const ey = 80;
+            const eOuter = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            eOuter.setAttribute('cx', cx); eOuter.setAttribute('cy', cy - 140); eOuter.setAttribute('rx', R_out * 0.45); eOuter.setAttribute('ry', R_out * 0.2);
+            eOuter.setAttribute('fill', '#fff'); eOuter.setAttribute('stroke', '#bbb'); svg.appendChild(eOuter);
+            const eInner = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            eInner.setAttribute('cx', cx); eInner.setAttribute('cy', cy - 140); eInner.setAttribute('rx', R_in * 0.45); eInner.setAttribute('ry', R_in * 0.2);
+            eInner.setAttribute('fill', '#f6f6f6'); eInner.setAttribute('stroke', '#ccc'); svg.appendChild(eInner);
+            svg.appendChild(textEl(10, 20, 'Isometric-ish view — approximate'));
+        }
+
+        function renderShapesTable(c) {
+            const tbody = document.getElementById('shapesTable'); tbody.innerHTML = '';
+            const rows = [];
+            // small
+            rows.push({ name: 'Small-top panel (triangular/trapezoid)', count: c.smallPanel.count, dim: `bottom width ${c.smallPanel.bottomWidth.toFixed(1)} mm × height ${c.smallPanel.height} mm (+ tab ${c.smallPanel.tabWidth} mm)` });
+            rows.push({ name: 'Main-ring panel (trapezoid)', count: c.mainPanel.count, dim: `top width ${c.mainPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainPanel.bottomWidth.toFixed(1)} mm × height ${c.mainPanel.height} mm (+ tab ${c.mainPanel.tabWidth} mm)` });
+            if (c.holeCount > 0) rows.push({ name: 'Window holes (on main ring)', count: c.holeCount, dim: `diameter ${c.holeDia} mm around mid-circumference (${c.circMid.toFixed(1)} mm)` });
+            for (const r of rows) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${r.name}</td><td>${r.count}</td><td>${r.dim}</td>`;
+                tbody.appendChild(tr);
+            }
+        }
+
+        function clear(svg) { while (svg.firstChild) svg.removeChild(svg.firstChild) }
+        function circle(cx, cy, r, fill = '#fff', stroke = '#999', opacity = 1) { const el = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); el.setAttribute('cx', cx); el.setAttribute('cy', cy); el.setAttribute('r', r); el.setAttribute('fill', fill); el.setAttribute('stroke', stroke); el.setAttribute('opacity', opacity); return el }
+        function line(x1, y1, x2, y2, color) { const l = document.createElementNS('http://www.w3.org/2000/svg', 'line'); l.setAttribute('x1', x1); l.setAttribute('y1', y1); l.setAttribute('x2', x2); l.setAttribute('y2', y2); l.setAttribute('stroke', color); return l }
+        function textEl(x, y, text) { const t = document.createElementNS('http://www.w3.org/2000/svg', 'text'); t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('font-size', 12); t.setAttribute('fill', '#333'); t.textContent = text; return t }
+
+        // Export basic flat-panel SVG (single combined SVG containing one of each unique shape scaled to view)
+        function exportSVG() {
+            const c = compute();
+            const svgNS = 'http://www.w3.org/2000/svg';
+            const doc = document.createElementNS(svgNS, 'svg');
+            doc.setAttribute('xmlns', svgNS);
+            // create small panel drawing
+            const pad = 20; let x = pad, y = pad;
+            const sW = Math.max(200, c.smallPanel.bottomWidth + 60);
+            const sH = c.smallPanel.height + 60;
+            const smallGroup = document.createElementNS(svgNS, 'g');
+            const bottomW = c.smallPanel.bottomWidth;
+            const h = c.smallPanel.height;
+            // small is triangle/trapezoid with top 0
+            const points = `${x + sW / 2},${y} ${x + sW},${y + sH} ${x},${y + sH}`;
+            const poly = document.createElementNS(svgNS, 'polygon'); poly.setAttribute('points', points); poly.setAttribute('fill', '#fff'); poly.setAttribute('stroke', '#000'); smallGroup.appendChild(poly);
+            // tab on right
+            const tab = document.createElementNS(svgNS, 'rect'); tab.setAttribute('x', x + sW + 2); tab.setAttribute('y', y + sH / 2 - c.smallPanel.tabWidth / 2); tab.setAttribute('width', c.smallPanel.tabWidth); tab.setAttribute('height', c.smallPanel.tabWidth * 1.8); tab.setAttribute('fill', '#fff'); tab.setAttribute('stroke', '#000'); smallGroup.appendChild(tab);
+            doc.appendChild(smallGroup);
+
+            // main panel
+            x += sW + pad;
+            const mainGroup = document.createElementNS(svgNS, 'g');
+            const topW = c.mainPanel.topWidth; const botW = c.mainPanel.bottomWidth; const mh = c.mainPanel.height;
+            const points2 = `${x + (sW / 2 - topW / 2)},${y} ${x + (sW / 2 + topW / 2)},${y} ${x + (sW / 2 + botW / 2)},${y + mh} ${x + (sW / 2 - botW / 2)},${y + mh}`;
+            const poly2 = document.createElementNS(svgNS, 'polygon'); poly2.setAttribute('points', points2); poly2.setAttribute('fill', '#fff'); poly2.setAttribute('stroke', '#000'); mainGroup.appendChild(poly2);
+            // tab
+            const tab2 = document.createElementNS(svgNS, 'rect'); tab2.setAttribute('x', x + sW / 2 + botW / 2 + 2); tab2.setAttribute('y', y + mh / 2 - c.mainPanel.tabWidth / 2); tab2.setAttribute('width', c.mainPanel.tabWidth); tab2.setAttribute('height', c.mainPanel.tabWidth * 2); tab2.setAttribute('fill', '#fff'); tab2.setAttribute('stroke', '#000'); mainGroup.appendChild(tab2);
+            doc.appendChild(mainGroup);
+
+            // serialize and trigger download
+            const serializer = new XMLSerializer(); const str = serializer.serializeToString(doc);
+            const blob = new Blob([str], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'ufo_panels.svg'; document.body.appendChild(a); a.click(); a.remove();
+        }
+
+        document.getElementById('updateBtn').addEventListener('click', render);
+        document.getElementById('exportSVG').addEventListener('click', exportSVG);
+        // live updates
+        ['totalDiameter', 'totalHeight', 'smallDiameter', 'smallHeight', 'nSmall', 'nMain'].forEach(id => document.getElementById(id).addEventListener('change', updateMainHeight));
+        // initial
+        render();
+    </script>
+</body>
+
+</html>
