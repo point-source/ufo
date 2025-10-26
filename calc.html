@@ -96,16 +96,26 @@
         shapes and counts. Material thickness fixed to 5 mm (foam board) — suitable for hand-fitting and taping.</p>
     <div class="controls panel">
         <div>
-            <div class="row"><label>Total diameter (mm)</label><input id="totalDiameter" type="number" value="800">
-            </div>
-            <div class="row"><label>Total height (mm)</label><input id="totalHeight" type="number" value="160"></div>
-            <div class="row"><label>Small top diameter (mm)</label><input id="smallDiameter" type="number" value="320">
-            </div>
-            <div class="row"><label>Small top height (mm)</label><input id="smallHeight" type="number" value="40"></div>
+            <div class="row"><label>Small diameter (mm) - top cap only</label><input id="smallDiameter" type="number"
+                    value="200"></div>
+            <div class="row"><label>Main outer diameter (mm) - cone transitions</label><input id="mainOuterDiameter"
+                    type="number" value="400"></div>
+            <div class="row"><label>Main inner diameter (mm) - cylinder walls</label><input id="mainInnerDiameter"
+                    type="number" value="800"></div>
+            <div class="row"><label>Total height (mm) - calculated from sections</label><input id="totalHeight"
+                    type="number" value="200" readonly></div>
         </div>
         <div>
-            <div class="row"><label>Main ring height (mm) — (will be totalHeight - smallHeight)</label><input
-                    id="mainHeight" type="number" value="120" readonly></div>
+            <div class="row"><label>Top cone height (mm)</label><input id="topConeHeight" type="number" value="30">
+            </div>
+            <div class="row"><label>Main upper cone height (mm)</label><input id="mainUpperHeight" type="number"
+                    value="40"></div>
+            <div class="row"><label>Cylinder height (mm)</label><input id="cylinderHeight" type="number" value="60">
+            </div>
+            <div class="row"><label>Main lower cone height (mm)</label><input id="mainLowerHeight" type="number"
+                    value="40"></div>
+        </div>
+        <div>
             <div class="row"><label>Material thickness (mm)</label><input id="thickness" type="number" value="5"></div>
             <div class="row"><label>Glue tab width (mm)</label><input id="tabWidth" type="number" value="12"></div>
         </div>
@@ -159,19 +169,30 @@
 
     <script>
         function mm(n) { return Number(n) }
-        function updateMainHeight() {
-            const totalH = mm(document.getElementById('totalHeight').value);
-            const smallH = mm(document.getElementById('smallHeight').value);
-            const mainH = Math.max(1, totalH - smallH);
-            document.getElementById('mainHeight').value = Math.round(mainH);
+        function updateTotalHeight() {
+            const hTopCone = mm(document.getElementById('topConeHeight').value);
+            const hMainUpper = mm(document.getElementById('mainUpperHeight').value);
+            const hCylinder = mm(document.getElementById('cylinderHeight').value);
+            const hMainLower = mm(document.getElementById('mainLowerHeight').value);
+            const totalH = hTopCone + hMainUpper + hCylinder + hMainLower;
+            document.getElementById('totalHeight').value = Math.round(totalH);
         }
 
         function compute() {
-            const D = mm(document.getElementById('totalDiameter').value);
-            const H = mm(document.getElementById('totalHeight').value);
+            // Get diameter parameters
             const dSmall = mm(document.getElementById('smallDiameter').value);
-            const hSmall = mm(document.getElementById('smallHeight').value);
-            const hMain = mm(document.getElementById('mainHeight').value);
+            const dMainOuter = mm(document.getElementById('mainOuterDiameter').value);
+            const dMainInner = mm(document.getElementById('mainInnerDiameter').value);
+
+            // Get section heights
+            const hTopCone = mm(document.getElementById('topConeHeight').value);
+            const hMainUpper = mm(document.getElementById('mainUpperHeight').value);
+            const hCylinder = mm(document.getElementById('cylinderHeight').value);
+            const hMainLower = mm(document.getElementById('mainLowerHeight').value);
+
+            // Calculate total height
+            const H = hTopCone + hMainUpper + hCylinder + hMainLower;
+
             const t = mm(document.getElementById('thickness').value);
             const tabW = mm(document.getElementById('tabWidth').value);
             const nSmall = Math.max(3, Math.round(mm(document.getElementById('nSmall').value)));
@@ -180,55 +201,85 @@
             const holeSpacing = mm(document.getElementById('holeSpacing').value);
 
             // Radii
-            const R_outer = D / 2;
             const R_small = dSmall / 2;
-            const R_inner = R_small; // main ring inner radius sits against small top
-            const R_mid = (R_inner + R_outer) / 2;
+            const R_mainOuter = dMainOuter / 2;
+            const R_mainInner = dMainInner / 2;
 
-            // For panels: straight (flattened) widths approximated by arc lengths at radii
-            const arcSmall = (2 * Math.PI * R_small) / nSmall; // outer arc length for small panels
-            // small panels: top width ~0 (center) bottom width = arcSmall
-            const smallPanel = {
-                type: 'small',
+            // Calculate panel geometries for each section
+            // Top cone: from small diameter to main outer diameter
+            const arcSmallTop = (2 * Math.PI * R_small) / nSmall;
+            const arcMainOuter = (2 * Math.PI * R_mainOuter) / nSmall;
+            const topConePanel = {
+                type: 'topCone',
                 count: nSmall,
-                topWidth: 0,
-                bottomWidth: arcSmall,
-                height: hSmall,
+                topWidth: arcSmallTop,
+                bottomWidth: arcMainOuter,
+                height: hTopCone,
                 tabWidth: tabW
             };
 
-            const arcInner = (2 * Math.PI * R_inner) / nMain;
-            const arcOuter = (2 * Math.PI * R_outer) / nMain;
-            const mainPanel = {
-                type: 'main',
+            // Main upper cone: from main outer to main inner diameter
+            const arcMainOuterUpper = (2 * Math.PI * R_mainOuter) / nMain;
+            const arcMainInner = (2 * Math.PI * R_mainInner) / nMain;
+            const mainUpperPanel = {
+                type: 'mainUpper',
                 count: nMain,
-                topWidth: arcInner,
-                bottomWidth: arcOuter,
-                height: hMain,
+                topWidth: arcMainOuterUpper,
+                bottomWidth: arcMainInner,
+                height: hMainUpper,
                 tabWidth: tabW
             };
 
-            // Holes around main ring: fit on mid-radius
-            const circMid = 2 * Math.PI * R_mid;
+            // Cylinder: same width top and bottom
+            const cylinderPanel = {
+                type: 'cylinder',
+                count: nMain,
+                topWidth: arcMainInner,
+                bottomWidth: arcMainInner,
+                height: hCylinder,
+                tabWidth: tabW
+            };
+
+            // Main lower cone: from main inner to main outer diameter
+            const mainLowerPanel = {
+                type: 'mainLower',
+                count: nMain,
+                topWidth: arcMainInner,
+                bottomWidth: arcMainOuterUpper,
+                height: hMainLower,
+                tabWidth: tabW
+            };
+
+            // Windows: one per cylinder panel, centered in each panel
             let holeCount = 0;
+            let windowPositions = [];
             if (holeDia > 0) {
-                if (holeSpacing > 0) {
-                    holeCount = Math.floor(circMid / (holeDia + holeSpacing));
-                } else {
-                    holeCount = Math.floor(circMid / (holeDia * 1.6)); // default spacing factor
+                holeCount = nMain;
+                for (let i = 0; i < nMain; i++) {
+                    const panelAngle = (2 * Math.PI * i) / nMain;
+                    const panelCenterAngle = panelAngle + (Math.PI / nMain);
+                    windowPositions.push({
+                        angle: panelCenterAngle,
+                        radius: R_mainInner,
+                        panelIndex: i
+                    });
                 }
-                holeCount = Math.max(0, holeCount);
             }
 
-            return { D, H, dSmall, hSmall, hMain: t ? hMain : hMain, t, tabW, R_outer, R_small, R_inner, R_mid, smallPanel, mainPanel, holeCount, holeDia, circMid };
+            return {
+                H, dSmall, dMainOuter, dMainInner, t, tabW,
+                R_small, R_mainOuter, R_mainInner,
+                hTopCone, hMainUpper, hCylinder, hMainLower,
+                topConePanel, mainUpperPanel, cylinderPanel, mainLowerPanel,
+                holeCount, holeDia, windowPositions
+            };
         }
 
         function render() {
-            updateMainHeight();
+            updateTotalHeight();
             const c = compute();
             renderTop(c);
             renderSide(c);
-            renderIso(c);
             renderShapesTable(c);
         }
 
@@ -236,97 +287,170 @@
             const svg = document.getElementById('svgTop');
             clear(svg);
             const W = 1000, H = 1000; const cx = W / 2, cy = H / 2;
-            const scale = (W * 0.9) / (c.D);
-            // outer circle
-            const outerR = c.R_outer * scale;
-            const innerR = c.R_small * scale;
-            svg.appendChild(circle(cx, cy, outerR, '#eee')); // outer
-            svg.appendChild(circle(cx, cy, innerR, '#ddd'));
-            // divisions for main
-            for (let i = 0; i < c.mainPanel.count; i++) {
-                const a1 = (2 * Math.PI * i) / c.mainPanel.count - Math.PI / 2;
-                const a2 = (2 * Math.PI * (i + 1)) / c.mainPanel.count - Math.PI / 2;
-                const x1 = cx + Math.cos(a1) * outerR; const y1 = cy + Math.sin(a1) * outerR;
-                const x2 = cx + Math.cos(a2) * outerR; const y2 = cy + Math.sin(a2) * outerR;
+            const scale = (W * 0.9) / c.dMainInner;
+
+            // Draw the three main circles
+            const mainInnerR = c.R_mainInner * scale;
+            const mainOuterR = c.R_mainOuter * scale;
+            const smallR = c.R_small * scale;
+
+            // Main inner circle (cylinder section)
+            svg.appendChild(circle(cx, cy, mainInnerR, '#e6f3ff', '#bbb', 1));
+
+            // Main outer circle (cone transitions)
+            svg.appendChild(circle(cx, cy, mainOuterR, '#f6f6f6', '#bbb', 1));
+
+            // Small top cap
+            svg.appendChild(circle(cx, cy, smallR, '#eee', '#bbb', 1));
+
+            // Panel divisions for main sections
+            for (let i = 0; i < c.cylinderPanel.count; i++) {
+                const a1 = (2 * Math.PI * i) / c.cylinderPanel.count - Math.PI / 2;
+                const x1 = cx + Math.cos(a1) * mainInnerR; const y1 = cy + Math.sin(a1) * mainInnerR;
                 svg.appendChild(line(cx, cy, x1, y1, '#bbb'));
             }
-            // small divisions
-            for (let i = 0; i < c.smallPanel.count; i++) {
-                const a1 = (2 * Math.PI * i) / c.smallPanel.count - Math.PI / 2;
-                const a2 = (2 * Math.PI * (i + 1)) / c.smallPanel.count - Math.PI / 2;
-                const x1 = cx + Math.cos(a1) * innerR; const y1 = cy + Math.sin(a1) * innerR;
+
+            // Panel divisions for small sections
+            for (let i = 0; i < c.topConePanel.count; i++) {
+                const a1 = (2 * Math.PI * i) / c.topConePanel.count - Math.PI / 2;
+                const x1 = cx + Math.cos(a1) * smallR; const y1 = cy + Math.sin(a1) * smallR;
                 svg.appendChild(line(cx, cy, x1, y1, '#bbb'));
             }
-            // hole indications on mid radius
-            const midR = c.R_mid * scale;
-            for (let i = 0; i < c.holeCount; i++) {
-                const a = (2 * Math.PI * i) / c.holeCount - Math.PI / 2;
-                const x = cx + Math.cos(a) * midR; const y = cy + Math.sin(a) * midR;
-                svg.appendChild(circle(x, y, (c.holeDia / 2) * scale, '#fff', 'black', 0.8));
+
+            // Windows at cylinder section
+            if (c.windowPositions) {
+                for (const window of c.windowPositions) {
+                    const x = cx + Math.cos(window.angle - Math.PI / 2) * mainInnerR;
+                    const y = cy + Math.sin(window.angle - Math.PI / 2) * mainInnerR;
+                    svg.appendChild(circle(x, y, (c.holeDia / 2) * scale, '#fff', 'black', 0.8));
+                }
             }
-            // labels
-            svg.appendChild(textEl(12, 20, 'Total Ø = ' + c.D + ' mm'));
+
+            // Labels
+            svg.appendChild(textEl(12, 20, `Main inner Ø = ${c.dMainInner}mm`));
+            svg.appendChild(textEl(12, 35, `Main outer Ø = ${c.dMainOuter}mm`));
+            svg.appendChild(textEl(12, 50, `Small Ø = ${c.dSmall}mm`));
         }
 
         function renderSide(c) {
             const svg = document.getElementById('svgSide'); clear(svg);
             const W = 1000, H = 400; const margin = 60;
-            const scaleX = (W - 2 * margin) / (c.D);
-            const scaleY = (H - 2 * margin) / (c.hSmall + c.hMain + 20);
-            const baseX = margin, baseY = H / 2 + 40;
-            // Draw main panel as trapezoid stacked
-            const rIn = c.R_inner; const rOut = c.R_outer;
-            const topWidth = c.mainPanel.topWidth * scaleX; const bottomWidth = c.mainPanel.bottomWidth * scaleX;
-            const ph = c.hMain * scaleY;
             const centerX = W / 2;
-            // draw top small skirt
-            const smallW = c.smallPanel.bottomWidth * scaleX;
-            const smallH = c.smallPanel.height * scaleY;
-            // side outline
-            const outerHalf = (bottomWidth / 2);
-            const innerHalf = (topWidth / 2);
-            const sx = centerX - outerHalf; const sy = baseY - ph / 2;
-            // draw trapezoid
-            const p = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-            p.setAttribute('points', `${centerX - innerHalf},${sy - smallH / 2} ${centerX + innerHalf},${sy - smallH / 2} ${centerX + outerHalf},${sy + ph - smallH / 2} ${centerX - outerHalf},${sy + ph - smallH / 2}`);
-            p.setAttribute('fill', '#f6f6f6'); p.setAttribute('stroke', '#bbb'); svg.appendChild(p);
-            // small top triangle stack
-            const smallHalf = smallW / 2;
-            const sp = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-            sp.setAttribute('points', `${centerX},${sy - smallH / 2 - 0} ${centerX + smallHalf},${sy - smallH / 2} ${centerX - smallHalf},${sy - smallH / 2}`);
-            sp.setAttribute('fill', '#eee'); sp.setAttribute('stroke', '#bbb'); svg.appendChild(sp);
-            svg.appendChild(textEl(10, 20, 'Side view — heights scaled'));
+
+            // Calculate scaling to fit the UFO profile in the view
+            const totalHeight = c.hTopCone + c.hMainUpper + c.hCylinder + c.hMainLower;
+            const maxWidth = c.dMainInner; // Full diameter
+            const scaleX = (W - 2 * margin) / maxWidth;
+            const scaleY = (H - 2 * margin) / totalHeight;
+
+            // Convert radii to screen coordinates
+            const rSmall = c.R_small * scaleX;
+            const rMainOuter = c.R_mainOuter * scaleX;
+            const rMainInner = c.R_mainInner * scaleX;
+
+            // Convert heights to screen coordinates
+            const hTopCone = c.hTopCone * scaleY;
+            const hMainUpper = c.hMainUpper * scaleY;
+            const hCylinder = c.hCylinder * scaleY;
+            const hMainLower = c.hMainLower * scaleY;
+
+            // Position from bottom up
+            const baseY = H - margin;
+            const mainLowerTopY = baseY - hMainLower;
+            const cylinderTopY = mainLowerTopY - hCylinder;
+            const mainUpperTopY = cylinderTopY - hMainUpper;
+            const topConeTopY = mainUpperTopY - hTopCone;
+
+            // Draw main lower cone (trapezoid from main inner to main outer)
+            const mainLowerTrapezoid = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            mainLowerTrapezoid.setAttribute('points',
+                `${centerX - rMainInner},${cylinderTopY} ` +
+                `${centerX + rMainInner},${cylinderTopY} ` +
+                `${centerX + rMainOuter},${baseY} ` +
+                `${centerX - rMainOuter},${baseY}`
+            );
+            mainLowerTrapezoid.setAttribute('fill', '#f6f6f6');
+            mainLowerTrapezoid.setAttribute('stroke', '#bbb');
+            mainLowerTrapezoid.setAttribute('stroke-width', '2');
+            svg.appendChild(mainLowerTrapezoid);
+
+            // Draw cylinder (rectangle - straight walls)
+            const cylinderRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            cylinderRect.setAttribute('x', centerX - rMainInner);
+            cylinderRect.setAttribute('y', cylinderTopY);
+            cylinderRect.setAttribute('width', rMainInner * 2);
+            cylinderRect.setAttribute('height', hCylinder);
+            cylinderRect.setAttribute('fill', '#e6f3ff');
+            cylinderRect.setAttribute('stroke', '#bbb');
+            cylinderRect.setAttribute('stroke-width', '2');
+            svg.appendChild(cylinderRect);
+
+            // Draw main upper cone (trapezoid from main outer to main inner)
+            const mainUpperTrapezoid = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            mainUpperTrapezoid.setAttribute('points',
+                `${centerX - rMainOuter},${mainUpperTopY} ` +
+                `${centerX + rMainOuter},${mainUpperTopY} ` +
+                `${centerX + rMainInner},${cylinderTopY} ` +
+                `${centerX - rMainInner},${cylinderTopY}`
+            );
+            mainUpperTrapezoid.setAttribute('fill', '#f6f6f6');
+            mainUpperTrapezoid.setAttribute('stroke', '#bbb');
+            mainUpperTrapezoid.setAttribute('stroke-width', '2');
+            svg.appendChild(mainUpperTrapezoid);
+
+            // Draw top cone (trapezoid from small to main outer)
+            const topConeTrapezoid = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            topConeTrapezoid.setAttribute('points',
+                `${centerX - rSmall},${topConeTopY} ` +
+                `${centerX + rSmall},${topConeTopY} ` +
+                `${centerX + rMainOuter},${mainUpperTopY} ` +
+                `${centerX - rMainOuter},${mainUpperTopY}`
+            );
+            topConeTrapezoid.setAttribute('fill', '#eee');
+            topConeTrapezoid.setAttribute('stroke', '#bbb');
+            topConeTrapezoid.setAttribute('stroke-width', '2');
+            svg.appendChild(topConeTrapezoid);
+
+            // Add dimension labels
+            svg.appendChild(textEl(10, 20, `Side view - Total height: ${c.H}mm`));
+            svg.appendChild(textEl(10, 35, `Top: ${c.hTopCone}mm, Upper: ${c.hMainUpper}mm, Cyl: ${c.hCylinder}mm, Lower: ${c.hMainLower}mm`));
         }
 
-        function renderIso(c) {
-            const svg = document.getElementById('svgIso'); clear(svg);
-            const W = 1000, H = 800; const cx = 300, cy = 380; const scale = 0.6 * (W * 0.001);
-            // We'll draw a simple oblique projection (cabinet) for rings
-            const proj = (x, y, z) => {
-                const sx = cx + x - z * 0.5;
-                const sy = cy - y - z * 0.5 * 0.5;
-                return [sx, sy];
-            };
-            // Draw outer rim ellipse and inner
-            const R_out = c.R_outer; const R_in = c.R_small;
-            // simplified: draw top ellipse
-            const ex = 220; const ey = 80;
-            const eOuter = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-            eOuter.setAttribute('cx', cx); eOuter.setAttribute('cy', cy - 140); eOuter.setAttribute('rx', R_out * 0.45); eOuter.setAttribute('ry', R_out * 0.2);
-            eOuter.setAttribute('fill', '#fff'); eOuter.setAttribute('stroke', '#bbb'); svg.appendChild(eOuter);
-            const eInner = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-            eInner.setAttribute('cx', cx); eInner.setAttribute('cy', cy - 140); eInner.setAttribute('rx', R_in * 0.45); eInner.setAttribute('ry', R_in * 0.2);
-            eInner.setAttribute('fill', '#f6f6f6'); eInner.setAttribute('stroke', '#ccc'); svg.appendChild(eInner);
-            svg.appendChild(textEl(10, 20, 'Isometric-ish view — approximate'));
-        }
 
         function renderShapesTable(c) {
             const tbody = document.getElementById('shapesTable'); tbody.innerHTML = '';
             const rows = [];
-            // small
-            rows.push({ name: 'Small-top panel (triangular/trapezoid)', count: c.smallPanel.count, dim: `bottom width ${c.smallPanel.bottomWidth.toFixed(1)} mm × height ${c.smallPanel.height} mm (+ tab ${c.smallPanel.tabWidth} mm)` });
-            rows.push({ name: 'Main-ring panel (trapezoid)', count: c.mainPanel.count, dim: `top width ${c.mainPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainPanel.bottomWidth.toFixed(1)} mm × height ${c.mainPanel.height} mm (+ tab ${c.mainPanel.tabWidth} mm)` });
-            if (c.holeCount > 0) rows.push({ name: 'Window holes (on main ring)', count: c.holeCount, dim: `diameter ${c.holeDia} mm around mid-circumference (${c.circMid.toFixed(1)} mm)` });
+
+            // Add all panel types
+            rows.push({
+                name: 'Top cone panel (trapezoid)',
+                count: c.topConePanel.count,
+                dim: `top width ${c.topConePanel.topWidth.toFixed(1)} mm × bottom width ${c.topConePanel.bottomWidth.toFixed(1)} mm × height ${c.topConePanel.height} mm (+ tab ${c.topConePanel.tabWidth} mm)`
+            });
+            rows.push({
+                name: 'Main upper cone panel (trapezoid)',
+                count: c.mainUpperPanel.count,
+                dim: `top width ${c.mainUpperPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainUpperPanel.bottomWidth.toFixed(1)} mm × height ${c.mainUpperPanel.height} mm (+ tab ${c.mainUpperPanel.tabWidth} mm)`
+            });
+            rows.push({
+                name: 'Cylinder panel (rectangle)',
+                count: c.cylinderPanel.count,
+                dim: `width ${c.cylinderPanel.topWidth.toFixed(1)} mm × height ${c.cylinderPanel.height} mm (+ tab ${c.cylinderPanel.tabWidth} mm)`
+            });
+            rows.push({
+                name: 'Main lower cone panel (trapezoid)',
+                count: c.mainLowerPanel.count,
+                dim: `top width ${c.mainLowerPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainLowerPanel.bottomWidth.toFixed(1)} mm × height ${c.mainLowerPanel.height} mm (+ tab ${c.mainLowerPanel.tabWidth} mm)`
+            });
+
+            if (c.holeCount > 0) {
+                rows.push({
+                    name: 'Window holes (on cylinder)',
+                    count: c.holeCount,
+                    dim: `diameter ${c.holeDia} mm around cylinder circumference`
+                });
+            }
+
             for (const r of rows) {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td>${r.name}</td><td>${r.count}</td><td>${r.dim}</td>`;
@@ -379,7 +503,15 @@
         document.getElementById('updateBtn').addEventListener('click', render);
         document.getElementById('exportSVG').addEventListener('click', exportSVG);
         // live updates
-        ['totalDiameter', 'totalHeight', 'smallDiameter', 'smallHeight', 'nSmall', 'nMain'].forEach(id => document.getElementById(id).addEventListener('change', updateMainHeight));
+        // Auto-update on all parameter changes
+        const allInputs = ['smallDiameter', 'mainOuterDiameter', 'mainInnerDiameter', 'topConeHeight', 'mainUpperHeight', 'cylinderHeight', 'mainLowerHeight', 'thickness', 'tabWidth', 'nSmall', 'nMain', 'holeDia', 'holeSpacing'];
+        allInputs.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('input', render);
+                element.addEventListener('change', render);
+            }
+        });
         // initial
         render();
     </script>
