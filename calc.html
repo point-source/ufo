@@ -97,23 +97,23 @@
     <div class="controls panel">
         <div>
             <div class="row"><label>Small diameter (mm) - top cap only</label><input id="smallDiameter" type="number"
-                    value="200"></div>
+                    value="260"></div>
             <div class="row"><label>Main outer diameter (mm) - cone transitions</label><input id="mainOuterDiameter"
-                    type="number" value="400"></div>
+                    type="number" value="410"></div>
             <div class="row"><label>Main inner diameter (mm) - cylinder walls</label><input id="mainInnerDiameter"
-                    type="number" value="800"></div>
+                    type="number" value="914"></div>
             <div class="row"><label>Total height (mm) - calculated from sections</label><input id="totalHeight"
-                    type="number" value="200" readonly></div>
+                    type="number" value="0" readonly></div>
         </div>
         <div>
-            <div class="row"><label>Top cone height (mm)</label><input id="topConeHeight" type="number" value="30">
+            <div class="row"><label>Top cone height (mm)</label><input id="topConeHeight" type="number" value="160">
             </div>
             <div class="row"><label>Main upper cone height (mm)</label><input id="mainUpperHeight" type="number"
-                    value="40"></div>
+                    value="130"></div>
             <div class="row"><label>Cylinder height (mm)</label><input id="cylinderHeight" type="number" value="60">
             </div>
             <div class="row"><label>Main lower cone height (mm)</label><input id="mainLowerHeight" type="number"
-                    value="40"></div>
+                    value="130"></div>
         </div>
         <div>
             <div class="row"><label>Material thickness (mm)</label><input id="thickness" type="number" value="5"></div>
@@ -203,28 +203,32 @@
             // Top cone: from small diameter to main outer diameter
             const arcSmallTop = (2 * Math.PI * R_small) / nSmall;
             const arcMainOuter = (2 * Math.PI * R_mainOuter) / nSmall;
+            // Calculate slant height for trapezoid panels
+            const topConeSlantHeight = Math.sqrt(hTopCone * hTopCone + (R_mainOuter - R_small) * (R_mainOuter - R_small));
             const topConePanel = {
                 type: 'topCone',
                 count: nSmall,
                 topWidth: arcSmallTop,
                 bottomWidth: arcMainOuter,
-                height: hTopCone,
+                height: topConeSlantHeight,
                 tabWidth: tabW
             };
 
             // Main upper cone: from main outer to main inner diameter
             const arcMainOuterUpper = (2 * Math.PI * R_mainOuter) / nMain;
             const arcMainInner = (2 * Math.PI * R_mainInner) / nMain;
+            // Calculate slant height for trapezoid panels
+            const mainUpperSlantHeight = Math.sqrt(hMainUpper * hMainUpper + (R_mainInner - R_mainOuter) * (R_mainInner - R_mainOuter));
             const mainUpperPanel = {
                 type: 'mainUpper',
                 count: nMain,
                 topWidth: arcMainOuterUpper,
                 bottomWidth: arcMainInner,
-                height: hMainUpper,
+                height: mainUpperSlantHeight,
                 tabWidth: tabW
             };
 
-            // Cylinder: same width top and bottom
+            // Cylinder: same width top and bottom (no slant height needed)
             const cylinderPanel = {
                 type: 'cylinder',
                 count: nMain,
@@ -235,12 +239,14 @@
             };
 
             // Main lower cone: from main inner to main outer diameter
+            // Calculate slant height for trapezoid panels
+            const mainLowerSlantHeight = Math.sqrt(hMainLower * hMainLower + (R_mainOuter - R_mainInner) * (R_mainOuter - R_mainInner));
             const mainLowerPanel = {
                 type: 'mainLower',
                 count: nMain,
                 topWidth: arcMainInner,
                 bottomWidth: arcMainOuterUpper,
-                height: hMainLower,
+                height: mainLowerSlantHeight,
                 tabWidth: tabW
             };
 
