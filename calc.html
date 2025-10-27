@@ -142,6 +142,7 @@
             </div>
             <div class="row"><label>Hole diameter for windows (mm)</label><input id="holeDia" type="number" value="25.4"
                     class="cylinder-input"></div>
+            <div class="row"><label>Panel divider color</label><input id="lineColor" type="color" value="#545454"></div>
         </div>
         <div>
             <div class="row"><label>Small-top cone color</label><input id="smallTopColor" type="color" value="#c475e1">
@@ -218,6 +219,7 @@
             const mainUpperColor = document.getElementById('mainUpperColor').value;
             const cylinderColor = document.getElementById('cylinderColor').value;
             const mainLowerColor = document.getElementById('mainLowerColor').value;
+            const lineColor = document.getElementById('lineColor').value;
 
             // Radii
             const R_small = dSmall / 2;
@@ -293,7 +295,7 @@
                 hTopCone, hMainUpper, hCylinder, hMainLower,
                 topConePanel, mainUpperPanel, cylinderPanel, mainLowerPanel,
                 holeCount, holeDia, windowPositions,
-                smallTopColor, mainUpperColor, cylinderColor, mainLowerColor
+                smallTopColor, mainUpperColor, cylinderColor, mainLowerColor, lineColor
             };
         }
 
@@ -361,7 +363,7 @@
                 const a1 = (2 * Math.PI * i) / c.cylinderPanel.count - Math.PI / 2;
                 const x1 = cx + Math.cos(a1) * mainOuterR; const y1 = cy + Math.sin(a1) * mainOuterR;
                 const x2 = cx + Math.cos(a1) * mainInnerR; const y2 = cy + Math.sin(a1) * mainInnerR;
-                svg.appendChild(line(x1, y1, x2, y2, '#bbb'));
+                svg.appendChild(line(x1, y1, x2, y2, c.lineColor));
             }
 
             // Panel divisions for small sections (from small radius to main outer radius)
@@ -369,7 +371,7 @@
                 const a1 = (2 * Math.PI * i) / c.topConePanel.count - Math.PI / 2;
                 const x1 = cx + Math.cos(a1) * smallR; const y1 = cy + Math.sin(a1) * smallR;
                 const x2 = cx + Math.cos(a1) * mainOuterR; const y2 = cy + Math.sin(a1) * mainOuterR;
-                svg.appendChild(line(x1, y1, x2, y2, '#bbb'));
+                svg.appendChild(line(x1, y1, x2, y2, c.lineColor));
             }
 
             // Windows at cylinder section
@@ -515,7 +517,7 @@
 
         function clear(svg) { while (svg.firstChild) svg.removeChild(svg.firstChild) }
         function circle(cx, cy, r, fill = '#fff', stroke = '#999', opacity = 1) { const el = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); el.setAttribute('cx', cx); el.setAttribute('cy', cy); el.setAttribute('r', r); el.setAttribute('fill', fill); el.setAttribute('stroke', stroke); el.setAttribute('opacity', opacity); return el }
-        function line(x1, y1, x2, y2, color) { const l = document.createElementNS('http://www.w3.org/2000/svg', 'line'); l.setAttribute('x1', x1); l.setAttribute('y1', y1); l.setAttribute('x2', x2); l.setAttribute('y2', y2); l.setAttribute('stroke', color); return l }
+        function line(x1, y1, x2, y2, color) { const l = document.createElementNS('http://www.w3.org/2000/svg', 'line'); l.setAttribute('x1', x1); l.setAttribute('y1', y1); l.setAttribute('x2', x2); l.setAttribute('y2', y2); l.setAttribute('stroke', color); l.setAttribute('stroke-width', '2'); return l }
         function textEl(x, y, text) { const t = document.createElementNS('http://www.w3.org/2000/svg', 'text'); t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('font-size', 12); t.setAttribute('fill', '#333'); t.textContent = text; return t }
 
         // Export basic flat-panel SVG (single combined SVG containing one of each unique shape scaled to view)
@@ -557,7 +559,7 @@
 
         // live updates
         // Auto-update on all parameter changes
-        const allInputs = ['smallDiameter', 'mainOuterDiameter', 'mainInnerDiameter', 'topConeHeight', 'mainUpperHeight', 'cylinderHeight', 'mainLowerHeight', 'nSmall', 'nMain', 'holeDia', 'smallTopColor', 'mainUpperColor', 'cylinderColor', 'mainLowerColor'];
+        const allInputs = ['smallDiameter', 'mainOuterDiameter', 'mainInnerDiameter', 'topConeHeight', 'mainUpperHeight', 'cylinderHeight', 'mainLowerHeight', 'nSmall', 'nMain', 'holeDia', 'lineColor', 'smallTopColor', 'mainUpperColor', 'cylinderColor', 'mainLowerColor'];
         allInputs.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
