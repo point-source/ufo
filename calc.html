@@ -116,10 +116,6 @@
                     value="130"></div>
         </div>
         <div>
-            <div class="row"><label>Material thickness (mm)</label><input id="thickness" type="number" value="5"></div>
-            <div class="row"><label>Glue tab width (mm)</label><input id="tabWidth" type="number" value="12"></div>
-        </div>
-        <div>
             <div class="row"><label>Small-top panel count (N)</label><input id="nSmall" type="number" value="16"
                     min="3"></div>
             <div class="row"><label>Main-ring panel count (N)</label><input id="nMain" type="number" value="32" min="3">
@@ -157,8 +153,7 @@
             </thead>
             <tbody id="shapesTable"></tbody>
         </table>
-        <p class="small">Each panel includes one glue tab (on one side). The small-top panels are triangular/trapezoid;
-            main panels are trapezoids.</p>
+        <p class="small">The small-top panels are triangular/trapezoid; main panels are trapezoids.</p>
     </div>
 
     <script>
@@ -187,8 +182,6 @@
             // Calculate total height
             const H = hTopCone + hMainUpper + hCylinder + hMainLower;
 
-            const t = mm(document.getElementById('thickness').value);
-            const tabW = mm(document.getElementById('tabWidth').value);
             const nSmall = Math.max(3, Math.round(mm(document.getElementById('nSmall').value)));
             const nMain = Math.max(3, Math.round(mm(document.getElementById('nMain').value)));
             const holeDia = mm(document.getElementById('holeDia').value);
@@ -210,8 +203,7 @@
                 count: nSmall,
                 topWidth: arcSmallTop,
                 bottomWidth: arcMainOuter,
-                height: topConeSlantHeight,
-                tabWidth: tabW
+                height: topConeSlantHeight
             };
 
             // Main upper cone: from main outer to main inner diameter
@@ -224,8 +216,7 @@
                 count: nMain,
                 topWidth: arcMainOuterUpper,
                 bottomWidth: arcMainInner,
-                height: mainUpperSlantHeight,
-                tabWidth: tabW
+                height: mainUpperSlantHeight
             };
 
             // Cylinder: same width top and bottom (no slant height needed)
@@ -234,8 +225,7 @@
                 count: nMain,
                 topWidth: arcMainInner,
                 bottomWidth: arcMainInner,
-                height: hCylinder,
-                tabWidth: tabW
+                height: hCylinder
             };
 
             // Main lower cone: from main inner to main outer diameter
@@ -246,8 +236,7 @@
                 count: nMain,
                 topWidth: arcMainInner,
                 bottomWidth: arcMainOuterUpper,
-                height: mainLowerSlantHeight,
-                tabWidth: tabW
+                height: mainLowerSlantHeight
             };
 
             // Windows: one per cylinder panel, centered in each panel
@@ -267,7 +256,7 @@
             }
 
             return {
-                H, dSmall, dMainOuter, dMainInner, t, tabW,
+                H, dSmall, dMainOuter, dMainInner,
                 R_small, R_mainOuter, R_mainInner,
                 hTopCone, hMainUpper, hCylinder, hMainLower,
                 topConePanel, mainUpperPanel, cylinderPanel, mainLowerPanel,
@@ -425,22 +414,22 @@
             rows.push({
                 name: 'Top cone panel (trapezoid)',
                 count: c.topConePanel.count,
-                dim: `top width ${c.topConePanel.topWidth.toFixed(1)} mm × bottom width ${c.topConePanel.bottomWidth.toFixed(1)} mm × height ${c.topConePanel.height.toFixed(1)} mm (+ tab ${c.topConePanel.tabWidth} mm)`
+                dim: `top width ${c.topConePanel.topWidth.toFixed(1)} mm × bottom width ${c.topConePanel.bottomWidth.toFixed(1)} mm × height ${c.topConePanel.height.toFixed(1)} mm`
             });
             rows.push({
                 name: 'Main upper cone panel (trapezoid)',
                 count: c.mainUpperPanel.count,
-                dim: `top width ${c.mainUpperPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainUpperPanel.bottomWidth.toFixed(1)} mm × height ${c.mainUpperPanel.height.toFixed(1)} mm (+ tab ${c.mainUpperPanel.tabWidth} mm)`
+                dim: `top width ${c.mainUpperPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainUpperPanel.bottomWidth.toFixed(1)} mm × height ${c.mainUpperPanel.height.toFixed(1)} mm`
             });
             rows.push({
                 name: 'Cylinder panel (rectangle)',
                 count: c.cylinderPanel.count,
-                dim: `width ${c.cylinderPanel.topWidth.toFixed(1)} mm × height ${c.cylinderPanel.height.toFixed(1)} mm (+ tab ${c.cylinderPanel.tabWidth} mm)`
+                dim: `width ${c.cylinderPanel.topWidth.toFixed(1)} mm × height ${c.cylinderPanel.height.toFixed(1)} mm`
             });
             rows.push({
                 name: 'Main lower cone panel (trapezoid)',
                 count: c.mainLowerPanel.count,
-                dim: `top width ${c.mainLowerPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainLowerPanel.bottomWidth.toFixed(1)} mm × height ${c.mainLowerPanel.height.toFixed(1)} mm (+ tab ${c.mainLowerPanel.tabWidth} mm)`
+                dim: `top width ${c.mainLowerPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainLowerPanel.bottomWidth.toFixed(1)} mm × height ${c.mainLowerPanel.height.toFixed(1)} mm`
             });
 
             if (c.holeCount > 0) {
@@ -502,7 +491,7 @@
 
         // live updates
         // Auto-update on all parameter changes
-        const allInputs = ['smallDiameter', 'mainOuterDiameter', 'mainInnerDiameter', 'topConeHeight', 'mainUpperHeight', 'cylinderHeight', 'mainLowerHeight', 'thickness', 'tabWidth', 'nSmall', 'nMain', 'holeDia', 'holeSpacing'];
+        const allInputs = ['smallDiameter', 'mainOuterDiameter', 'mainInnerDiameter', 'topConeHeight', 'mainUpperHeight', 'cylinderHeight', 'mainLowerHeight', 'nSmall', 'nMain', 'holeDia', 'holeSpacing'];
         allInputs.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
