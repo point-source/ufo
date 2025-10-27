@@ -16,7 +16,8 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 12px;
-            max-width: 1200px
+            max-width: 1200px;
+            align-items: start
         }
 
         label {
@@ -34,7 +35,11 @@
         }
 
         .row {
-            margin-bottom: 8px
+            margin-bottom: 8px;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start
         }
 
         .panel {
