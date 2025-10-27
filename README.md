@@ -1,6 +1,6 @@
 # UFO Parametric Cutter
 
-An interactive web-based tool for designing and generating cutting patterns for UFO-shaped structures made from foam board panels.
+An interactive web-based tool for designing and generating cutting patterns for UFO-shaped structures made from foam board panels. Inspired by [Manning Makes Stuff's 48in Flying Saucer](https://manningkrull.com/manningmakesstuff/48-flying-saucer-halloween-decoration)
 
 ## Overview
 
