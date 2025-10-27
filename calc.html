@@ -290,18 +290,20 @@
             // Small top cap
             svg.appendChild(circle(cx, cy, smallR, '#eee', '#bbb', 1));
 
-            // Panel divisions for main sections
+            // Panel divisions for main sections (from main outer to main inner)
             for (let i = 0; i < c.cylinderPanel.count; i++) {
                 const a1 = (2 * Math.PI * i) / c.cylinderPanel.count - Math.PI / 2;
-                const x1 = cx + Math.cos(a1) * mainInnerR; const y1 = cy + Math.sin(a1) * mainInnerR;
-                svg.appendChild(line(cx, cy, x1, y1, '#bbb'));
+                const x1 = cx + Math.cos(a1) * mainOuterR; const y1 = cy + Math.sin(a1) * mainOuterR;
+                const x2 = cx + Math.cos(a1) * mainInnerR; const y2 = cy + Math.sin(a1) * mainInnerR;
+                svg.appendChild(line(x1, y1, x2, y2, '#bbb'));
             }
 
-            // Panel divisions for small sections
+            // Panel divisions for small sections (from small radius to main outer radius)
             for (let i = 0; i < c.topConePanel.count; i++) {
                 const a1 = (2 * Math.PI * i) / c.topConePanel.count - Math.PI / 2;
                 const x1 = cx + Math.cos(a1) * smallR; const y1 = cy + Math.sin(a1) * smallR;
-                svg.appendChild(line(cx, cy, x1, y1, '#bbb'));
+                const x2 = cx + Math.cos(a1) * mainOuterR; const y2 = cy + Math.sin(a1) * mainOuterR;
+                svg.appendChild(line(x1, y1, x2, y2, '#bbb'));
             }
 
             // Windows at cylinder section
