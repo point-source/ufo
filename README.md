@@ -2,6 +2,8 @@
 
 An interactive web-based tool for designing and generating cutting patterns for UFO-shaped structures made from foam board panels. Inspired by [Manning Makes Stuff's 48in Flying Saucer](https://manningkrull.com/manningmakesstuff/48-flying-saucer-halloween-decoration)
 
+Try it out here on GitHub Pages: [UFO Parametric Cutter](https://point-source.github.io/ufo/)
+
 ## Overview
 
 This single-file HTML application allows you to design a UFO-shaped structure by adjusting various parameters and automatically generates:
