@@ -88,6 +88,22 @@
             font-size: 12px;
             color: #555
         }
+
+        .small-top-input {
+            border: 2px solid var(--small-top-color, #c475e1) !important;
+        }
+
+        .main-upper-input {
+            border: 2px solid var(--main-upper-color, #11e0e4) !important;
+        }
+
+        .cylinder-input {
+            border: 2px solid var(--cylinder-color, #c2f0ff) !important;
+        }
+
+        .main-lower-input {
+            border: 2px solid var(--main-lower-color, #75a3ff) !important;
+        }
     </style>
 </head>
 
@@ -98,31 +114,43 @@
     <div class="controls panel">
         <div>
             <div class="row"><label>Small diameter (mm) - top cap only</label><input id="smallDiameter" type="number"
-                    value="260"></div>
+                    value="260" class="small-top-input"></div>
             <div class="row"><label>Main outer diameter (mm) - cone transitions</label><input id="mainOuterDiameter"
-                    type="number" value="410"></div>
+                    type="number" value="410" class="main-upper-input"></div>
             <div class="row"><label>Main inner diameter (mm) - cylinder walls</label><input id="mainInnerDiameter"
-                    type="number" value="914"></div>
+                    type="number" value="914" class="cylinder-input"></div>
             <div class="row"><label>Total height (mm) - calculated from sections</label><input id="totalHeight"
                     type="number" value="0" readonly></div>
         </div>
         <div>
-            <div class="row"><label>Top cone height (mm)</label><input id="topConeHeight" type="number" value="160">
+            <div class="row"><label>Top cone height (mm)</label><input id="topConeHeight" type="number" value="160"
+                    class="small-top-input">
             </div>
             <div class="row"><label>Main upper cone height (mm)</label><input id="mainUpperHeight" type="number"
-                    value="130"></div>
-            <div class="row"><label>Cylinder height (mm)</label><input id="cylinderHeight" type="number" value="60">
+                    value="130" class="main-upper-input"></div>
+            <div class="row"><label>Cylinder height (mm)</label><input id="cylinderHeight" type="number" value="60"
+                    class="cylinder-input">
             </div>
             <div class="row"><label>Main lower cone height (mm)</label><input id="mainLowerHeight" type="number"
-                    value="130"></div>
+                    value="130" class="main-lower-input"></div>
         </div>
         <div>
-            <div class="row"><label>Small-top panel count (N)</label><input id="nSmall" type="number" value="16"
-                    min="3"></div>
-            <div class="row"><label>Main-ring panel count (N)</label><input id="nMain" type="number" value="32" min="3">
+            <div class="row"><label>Small-top panel count (N)</label><input id="nSmall" type="number" value="16" min="3"
+                    class="small-top-input"></div>
+            <div class="row"><label>Main-ring panel count (N)</label><input id="nMain" type="number" value="32" min="3"
+                    class="main-upper-input">
             </div>
-            <div class="row"><label>Hole diameter for windows (mm)</label><input id="holeDia" type="number"
-                    value="25.4"></div>
+            <div class="row"><label>Hole diameter for windows (mm)</label><input id="holeDia" type="number" value="25.4"
+                    class="cylinder-input"></div>
+        </div>
+        <div>
+            <div class="row"><label>Small-top cone color</label><input id="smallTopColor" type="color" value="#c475e1">
+            </div>
+            <div class="row"><label>Main upper cone color</label><input id="mainUpperColor" type="color"
+                    value="#11e0e4"></div>
+            <div class="row"><label>Cylinder color</label><input id="cylinderColor" type="color" value="#c2f0ff"></div>
+            <div class="row"><label>Main lower cone color</label><input id="mainLowerColor" type="color"
+                    value="#75a3ff"></div>
         </div>
     </div>
     <div style="margin-top:12px;display:flex;gap:12px;align-items:center">
@@ -184,6 +212,12 @@
             const nSmall = Math.max(3, Math.round(mm(document.getElementById('nSmall').value)));
             const nMain = Math.max(3, Math.round(mm(document.getElementById('nMain').value)));
             const holeDia = mm(document.getElementById('holeDia').value);
+
+            // Get color values
+            const smallTopColor = document.getElementById('smallTopColor').value;
+            const mainUpperColor = document.getElementById('mainUpperColor').value;
+            const cylinderColor = document.getElementById('cylinderColor').value;
+            const mainLowerColor = document.getElementById('mainLowerColor').value;
 
             // Radii
             const R_small = dSmall / 2;
@@ -258,12 +292,27 @@
                 R_small, R_mainOuter, R_mainInner,
                 hTopCone, hMainUpper, hCylinder, hMainLower,
                 topConePanel, mainUpperPanel, cylinderPanel, mainLowerPanel,
-                holeCount, holeDia, windowPositions
+                holeCount, holeDia, windowPositions,
+                smallTopColor, mainUpperColor, cylinderColor, mainLowerColor
             };
+        }
+
+        function updateInputBorders() {
+            const smallTopColor = document.getElementById('smallTopColor').value;
+            const mainUpperColor = document.getElementById('mainUpperColor').value;
+            const cylinderColor = document.getElementById('cylinderColor').value;
+            const mainLowerColor = document.getElementById('mainLowerColor').value;
+
+            // Update CSS custom properties for dynamic colors
+            document.documentElement.style.setProperty('--small-top-color', smallTopColor);
+            document.documentElement.style.setProperty('--main-upper-color', mainUpperColor);
+            document.documentElement.style.setProperty('--cylinder-color', cylinderColor);
+            document.documentElement.style.setProperty('--main-lower-color', mainLowerColor);
         }
 
         function render() {
             updateTotalHeight();
+            updateInputBorders();
             const c = compute();
             renderTop(c);
             renderSide(c);
@@ -281,8 +330,8 @@
             const mainOuterR = c.R_mainOuter * scale;
             const smallR = c.R_small * scale;
 
-            // Main inner circle (cylinder section) - light blue
-            svg.appendChild(circle(cx, cy, mainInnerR, '#e6f3ff', '#bbb', 1));
+            // Main inner circle (cylinder section)
+            svg.appendChild(circle(cx, cy, mainInnerR, c.cylinderColor, '#bbb', 1));
 
             // Main outer circle (cone transitions) - light gray
             svg.appendChild(circle(cx, cy, mainOuterR, '#f6f6f6', '#bbb', 1));
@@ -291,18 +340,18 @@
             svg.appendChild(circle(cx, cy, smallR, '#f0f0f0', '#bbb', 1));
 
             // Add colored rings for each section using paths
-            // Small-top cone ring (between small and main outer) - light green
+            // Small-top cone ring (between small and main outer)
             const smallTopRing = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             smallTopRing.setAttribute('d', `M ${cx - mainOuterR},${cy} A ${mainOuterR},${mainOuterR} 0 0,1 ${cx + mainOuterR},${cy} A ${mainOuterR},${mainOuterR} 0 0,1 ${cx - mainOuterR},${cy} M ${cx - smallR},${cy} A ${smallR},${smallR} 0 0,0 ${cx + smallR},${cy} A ${smallR},${smallR} 0 0,0 ${cx - smallR},${cy} Z`);
-            smallTopRing.setAttribute('fill', '#e8f5e8');
+            smallTopRing.setAttribute('fill', c.smallTopColor);
             smallTopRing.setAttribute('stroke', '#bbb');
             smallTopRing.setAttribute('stroke-width', '1');
             svg.appendChild(smallTopRing);
 
-            // Main upper cone ring (between main outer and main inner) - light orange  
+            // Main upper cone ring (between main outer and main inner)
             const mainUpperRing = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             mainUpperRing.setAttribute('d', `M ${cx - mainInnerR},${cy} A ${mainInnerR},${mainInnerR} 0 0,1 ${cx + mainInnerR},${cy} A ${mainInnerR},${mainInnerR} 0 0,1 ${cx - mainInnerR},${cy} M ${cx - mainOuterR},${cy} A ${mainOuterR},${mainOuterR} 0 0,0 ${cx + mainOuterR},${cy} A ${mainOuterR},${mainOuterR} 0 0,0 ${cx - mainOuterR},${cy} Z`);
-            mainUpperRing.setAttribute('fill', '#ffe8d1');
+            mainUpperRing.setAttribute('fill', c.mainUpperColor);
             mainUpperRing.setAttribute('stroke', '#bbb');
             mainUpperRing.setAttribute('stroke-width', '1');
             svg.appendChild(mainUpperRing);
@@ -367,7 +416,7 @@
             const mainUpperTopY = cylinderTopY - hMainUpper; // Main upper cone ends here
             const topConeTopY = mainUpperTopY - hTopCone; // Top cone ends here
 
-            // Draw main lower cone (trapezoid from main inner to main outer) - light orange
+            // Draw main lower cone (trapezoid from main inner to main outer)
             const mainLowerTrapezoid = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             mainLowerTrapezoid.setAttribute('points',
                 `${centerX - rMainInner},${cylinderBottomY} ` +
@@ -375,7 +424,7 @@
                 `${centerX + rMainOuter},${baseY} ` +
                 `${centerX - rMainOuter},${baseY}`
             );
-            mainLowerTrapezoid.setAttribute('fill', '#ffe8d1');
+            mainLowerTrapezoid.setAttribute('fill', c.mainLowerColor);
             mainLowerTrapezoid.setAttribute('stroke', '#bbb');
             mainLowerTrapezoid.setAttribute('stroke-width', '2');
             svg.appendChild(mainLowerTrapezoid);
@@ -386,12 +435,12 @@
             cylinderRect.setAttribute('y', cylinderTopY);
             cylinderRect.setAttribute('width', rMainInner * 2);
             cylinderRect.setAttribute('height', hCylinder);
-            cylinderRect.setAttribute('fill', '#e6f3ff');
+            cylinderRect.setAttribute('fill', c.cylinderColor);
             cylinderRect.setAttribute('stroke', '#bbb');
             cylinderRect.setAttribute('stroke-width', '2');
             svg.appendChild(cylinderRect);
 
-            // Draw main upper cone (trapezoid from main outer to main inner) - light orange
+            // Draw main upper cone (trapezoid from main outer to main inner)
             const mainUpperTrapezoid = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             mainUpperTrapezoid.setAttribute('points',
                 `${centerX - rMainOuter},${mainUpperTopY} ` +
@@ -399,12 +448,12 @@
                 `${centerX + rMainInner},${cylinderTopY} ` +
                 `${centerX - rMainInner},${cylinderTopY}`
             );
-            mainUpperTrapezoid.setAttribute('fill', '#ffe8d1');
+            mainUpperTrapezoid.setAttribute('fill', c.mainUpperColor);
             mainUpperTrapezoid.setAttribute('stroke', '#bbb');
             mainUpperTrapezoid.setAttribute('stroke-width', '2');
             svg.appendChild(mainUpperTrapezoid);
 
-            // Draw top cone (trapezoid from small to main outer) - light green
+            // Draw top cone (trapezoid from small to main outer)
             const topConeTrapezoid = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             topConeTrapezoid.setAttribute('points',
                 `${centerX - rSmall},${topConeTopY} ` +
@@ -412,7 +461,7 @@
                 `${centerX + rMainOuter},${mainUpperTopY} ` +
                 `${centerX - rMainOuter},${mainUpperTopY}`
             );
-            topConeTrapezoid.setAttribute('fill', '#e8f5e8');
+            topConeTrapezoid.setAttribute('fill', c.smallTopColor);
             topConeTrapezoid.setAttribute('stroke', '#bbb');
             topConeTrapezoid.setAttribute('stroke-width', '2');
             svg.appendChild(topConeTrapezoid);
@@ -508,7 +557,7 @@
 
         // live updates
         // Auto-update on all parameter changes
-        const allInputs = ['smallDiameter', 'mainOuterDiameter', 'mainInnerDiameter', 'topConeHeight', 'mainUpperHeight', 'cylinderHeight', 'mainLowerHeight', 'nSmall', 'nMain', 'holeDia'];
+        const allInputs = ['smallDiameter', 'mainOuterDiameter', 'mainInnerDiameter', 'topConeHeight', 'mainUpperHeight', 'cylinderHeight', 'mainLowerHeight', 'nSmall', 'nMain', 'holeDia', 'smallTopColor', 'mainUpperColor', 'cylinderColor', 'mainLowerColor'];
         allInputs.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
