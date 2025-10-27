@@ -113,31 +113,34 @@
 </head>
 
 <body>
-    <h1>UFO parametric cutter — metric (mm)</h1>
-    <p class="small">Interactive single-file generator: enter sizes (mm), adjust panels, and see preview + flat panel
-        shapes and counts. Material thickness fixed to 5 mm (foam board) — suitable for hand-fitting and taping.</p>
+    <h1>UFO parametric cutter — <span id="unitTitle">metric (mm)</span></h1>
+    <p class="small">Interactive single-file generator: enter sizes (<span id="unitLabel">mm</span>), adjust panels, and
+        see preview + flat panel
+        shapes and counts. Material thickness fixed to <span id="materialThickness">5 mm</span> (foam board) — suitable
+        for hand-fitting and taping.</p>
     <div class="controls panel">
         <div>
-            <div class="row"><label>Small diameter (mm) - top cap only</label><input id="smallDiameter" type="number"
-                    value="260" class="small-top-input"></div>
-            <div class="row"><label>Main outer diameter (mm) - cone transitions</label><input id="mainOuterDiameter"
-                    type="number" value="410" class="main-upper-input"></div>
-            <div class="row"><label>Main inner diameter (mm) - cylinder walls</label><input id="mainInnerDiameter"
-                    type="number" value="914" class="cylinder-input"></div>
-            <div class="row"><label>Total height (mm) - calculated from sections</label><input id="totalHeight"
-                    type="number" value="0" readonly></div>
+            <div class="row"><label>Small diameter (<span class="unit-text">mm</span>) - top cap only</label><input
+                    id="smallDiameter" type="number" value="260" class="small-top-input"></div>
+            <div class="row"><label>Main outer diameter (<span class="unit-text">mm</span>) - cone
+                    transitions</label><input id="mainOuterDiameter" type="number" value="410" class="main-upper-input">
+            </div>
+            <div class="row"><label>Main inner diameter (<span class="unit-text">mm</span>) - cylinder
+                    walls</label><input id="mainInnerDiameter" type="number" value="914" class="cylinder-input"></div>
+            <div class="row"><label>Total height (<span class="unit-text">mm</span>) - calculated from
+                    sections</label><input id="totalHeight" type="number" value="0" readonly></div>
         </div>
         <div>
-            <div class="row"><label>Top cone height (mm)</label><input id="topConeHeight" type="number" value="160"
-                    class="small-top-input">
+            <div class="row"><label>Top cone height (<span class="unit-text">mm</span>)</label><input id="topConeHeight"
+                    type="number" value="160" class="small-top-input">
             </div>
-            <div class="row"><label>Main upper cone height (mm)</label><input id="mainUpperHeight" type="number"
-                    value="130" class="main-upper-input"></div>
-            <div class="row"><label>Cylinder height (mm)</label><input id="cylinderHeight" type="number" value="60"
-                    class="cylinder-input">
+            <div class="row"><label>Main upper cone height (<span class="unit-text">mm</span>)</label><input
+                    id="mainUpperHeight" type="number" value="130" class="main-upper-input"></div>
+            <div class="row"><label>Cylinder height (<span class="unit-text">mm</span>)</label><input
+                    id="cylinderHeight" type="number" value="60" class="cylinder-input">
             </div>
-            <div class="row"><label>Main lower cone height (mm)</label><input id="mainLowerHeight" type="number"
-                    value="130" class="main-lower-input"></div>
+            <div class="row"><label>Main lower cone height (<span class="unit-text">mm</span>)</label><input
+                    id="mainLowerHeight" type="number" value="130" class="main-lower-input"></div>
         </div>
         <div>
             <div class="row"><label>Small-top panel count (N)</label><input id="nSmall" type="number" value="16" min="3"
@@ -145,8 +148,8 @@
             <div class="row"><label>Main-ring panel count (N)</label><input id="nMain" type="number" value="32" min="3"
                     class="main-upper-input">
             </div>
-            <div class="row"><label>Hole diameter for windows (mm)</label><input id="holeDia" type="number" value="25.4"
-                    class="cylinder-input"></div>
+            <div class="row"><label>Hole diameter for windows (<span class="unit-text">mm</span>)</label><input
+                    id="holeDia" type="number" value="25.4" class="cylinder-input"></div>
             <div class="row"><label>Panel divider color</label><input id="lineColor" type="color" value="#545454"></div>
         </div>
         <div>
@@ -161,6 +164,13 @@
     </div>
     <div style="margin-top:12px;display:flex;gap:12px;align-items:center">
         <div class="small">Views update automatically as you change values.</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+            <label for="unitToggle" style="margin:0;font-size:13px">Units:</label>
+            <select id="unitToggle" style="width:auto;padding:4px 8px;font-size:13px">
+                <option value="metric">Metric (mm)</option>
+                <option value="imperial">Imperial (in)</option>
+            </select>
+        </div>
     </div>
 
     <div class="preview">
@@ -181,7 +191,7 @@
                 <tr>
                     <th>Shape</th>
                     <th>Count</th>
-                    <th>Dimensions (mm)</th>
+                    <th>Dimensions (<span class="unit-text">mm</span>)</th>
                 </tr>
             </thead>
             <tbody id="shapesTable"></tbody>
@@ -190,34 +200,85 @@
     </div>
 
     <script>
+        // Unit conversion constants
+        const MM_TO_INCH = 0.0393701;
+        const INCH_TO_MM = 25.4;
+
+        // Current unit system
+        let isMetric = true;
+
+        // Conversion functions
         function mm(n) { return Number(n) }
+        function mmToInches(mm) { return mm * MM_TO_INCH }
+        function inchesToMm(inches) { return inches * INCH_TO_MM }
+
+        // Convert value based on current unit system
+        function convertToDisplay(value) {
+            return isMetric ? value : mmToInches(value);
+        }
+
+        function convertFromDisplay(value) {
+            return isMetric ? value : inchesToMm(value);
+        }
+
+        function getUnitText() {
+            return isMetric ? 'mm' : 'in';
+        }
+
+        function updateUnitLabels() {
+            const unitText = getUnitText();
+            document.querySelectorAll('.unit-text').forEach(el => {
+                el.textContent = unitText;
+            });
+
+            // Update main labels
+            document.getElementById('unitTitle').textContent = isMetric ? 'metric (mm)' : 'imperial (in)';
+            document.getElementById('unitLabel').textContent = unitText;
+            document.getElementById('materialThickness').textContent = isMetric ? '5 mm' : '0.2 in';
+        }
+
+        function convertAllInputs() {
+            const inputs = ['smallDiameter', 'mainOuterDiameter', 'mainInnerDiameter',
+                'topConeHeight', 'mainUpperHeight', 'cylinderHeight', 'mainLowerHeight', 'holeDia'];
+
+            inputs.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    const currentValue = parseFloat(input.value);
+                    if (!isNaN(currentValue)) {
+                        const convertedValue = convertToDisplay(convertFromDisplay(currentValue));
+                        input.value = convertedValue.toFixed(isMetric ? 0 : 2);
+                    }
+                }
+            });
+        }
         function updateTotalHeight() {
-            const hTopCone = mm(document.getElementById('topConeHeight').value);
-            const hMainUpper = mm(document.getElementById('mainUpperHeight').value);
-            const hCylinder = mm(document.getElementById('cylinderHeight').value);
-            const hMainLower = mm(document.getElementById('mainLowerHeight').value);
+            const hTopCone = convertFromDisplay(mm(document.getElementById('topConeHeight').value));
+            const hMainUpper = convertFromDisplay(mm(document.getElementById('mainUpperHeight').value));
+            const hCylinder = convertFromDisplay(mm(document.getElementById('cylinderHeight').value));
+            const hMainLower = convertFromDisplay(mm(document.getElementById('mainLowerHeight').value));
             const totalH = hTopCone + hMainUpper + hCylinder + hMainLower;
-            document.getElementById('totalHeight').value = Math.round(totalH);
+            document.getElementById('totalHeight').value = convertToDisplay(totalH).toFixed(isMetric ? 0 : 2);
         }
 
         function compute() {
-            // Get diameter parameters
-            const dSmall = mm(document.getElementById('smallDiameter').value);
-            const dMainOuter = mm(document.getElementById('mainOuterDiameter').value);
-            const dMainInner = mm(document.getElementById('mainInnerDiameter').value);
+            // Get diameter parameters (convert to mm for calculations)
+            const dSmall = convertFromDisplay(mm(document.getElementById('smallDiameter').value));
+            const dMainOuter = convertFromDisplay(mm(document.getElementById('mainOuterDiameter').value));
+            const dMainInner = convertFromDisplay(mm(document.getElementById('mainInnerDiameter').value));
 
-            // Get section heights
-            const hTopCone = mm(document.getElementById('topConeHeight').value);
-            const hMainUpper = mm(document.getElementById('mainUpperHeight').value);
-            const hCylinder = mm(document.getElementById('cylinderHeight').value);
-            const hMainLower = mm(document.getElementById('mainLowerHeight').value);
+            // Get section heights (convert to mm for calculations)
+            const hTopCone = convertFromDisplay(mm(document.getElementById('topConeHeight').value));
+            const hMainUpper = convertFromDisplay(mm(document.getElementById('mainUpperHeight').value));
+            const hCylinder = convertFromDisplay(mm(document.getElementById('cylinderHeight').value));
+            const hMainLower = convertFromDisplay(mm(document.getElementById('mainLowerHeight').value));
 
             // Calculate total height
             const H = hTopCone + hMainUpper + hCylinder + hMainLower;
 
             const nSmall = Math.max(3, Math.round(mm(document.getElementById('nSmall').value)));
             const nMain = Math.max(3, Math.round(mm(document.getElementById('nMain').value)));
-            const holeDia = mm(document.getElementById('holeDia').value);
+            const holeDia = convertFromDisplay(mm(document.getElementById('holeDia').value));
 
             // Get color values
             const smallTopColor = document.getElementById('smallTopColor').value;
@@ -389,9 +450,9 @@
             }
 
             // Labels
-            svg.appendChild(textEl(12, 20, `Main inner Ø = ${c.dMainInner}mm`));
-            svg.appendChild(textEl(12, 35, `Main outer Ø = ${c.dMainOuter}mm`));
-            svg.appendChild(textEl(12, 50, `Small Ø = ${c.dSmall}mm`));
+            svg.appendChild(textEl(12, 20, `Main inner Ø = ${convertToDisplay(c.dMainInner).toFixed(isMetric ? 0 : 2)}${getUnitText()}`));
+            svg.appendChild(textEl(12, 35, `Main outer Ø = ${convertToDisplay(c.dMainOuter).toFixed(isMetric ? 0 : 2)}${getUnitText()}`));
+            svg.appendChild(textEl(12, 50, `Small Ø = ${convertToDisplay(c.dSmall).toFixed(isMetric ? 0 : 2)}${getUnitText()}`));
         }
 
         function renderSide(c) {
@@ -474,8 +535,8 @@
             svg.appendChild(topConeTrapezoid);
 
             // Add dimension labels
-            svg.appendChild(textEl(10, 20, `Side view - Total height: ${c.H}mm`));
-            svg.appendChild(textEl(10, 35, `Top: ${c.hTopCone}mm, Upper: ${c.hMainUpper}mm, Cyl: ${c.hCylinder}mm, Lower: ${c.hMainLower}mm`));
+            svg.appendChild(textEl(10, 20, `Side view - Total height: ${convertToDisplay(c.H).toFixed(isMetric ? 0 : 2)}${getUnitText()}`));
+            svg.appendChild(textEl(10, 35, `Top: ${convertToDisplay(c.hTopCone).toFixed(isMetric ? 0 : 2)}${getUnitText()}, Upper: ${convertToDisplay(c.hMainUpper).toFixed(isMetric ? 0 : 2)}${getUnitText()}, Cyl: ${convertToDisplay(c.hCylinder).toFixed(isMetric ? 0 : 2)}${getUnitText()}, Lower: ${convertToDisplay(c.hMainLower).toFixed(isMetric ? 0 : 2)}${getUnitText()}`));
         }
 
 
@@ -484,32 +545,35 @@
             const rows = [];
 
             // Add all panel types
+            const unit = getUnitText();
+            const precision = isMetric ? 1 : 2;
+
             rows.push({
                 name: 'Top cone panel (trapezoid)',
                 count: c.topConePanel.count,
-                dim: `top width ${c.topConePanel.topWidth.toFixed(1)} mm × bottom width ${c.topConePanel.bottomWidth.toFixed(1)} mm × height ${c.topConePanel.height.toFixed(1)} mm`
+                dim: `top width ${convertToDisplay(c.topConePanel.topWidth).toFixed(precision)} ${unit} × bottom width ${convertToDisplay(c.topConePanel.bottomWidth).toFixed(precision)} ${unit} × height ${convertToDisplay(c.topConePanel.height).toFixed(precision)} ${unit}`
             });
             rows.push({
                 name: 'Main upper cone panel (trapezoid)',
                 count: c.mainUpperPanel.count,
-                dim: `top width ${c.mainUpperPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainUpperPanel.bottomWidth.toFixed(1)} mm × height ${c.mainUpperPanel.height.toFixed(1)} mm`
+                dim: `top width ${convertToDisplay(c.mainUpperPanel.topWidth).toFixed(precision)} ${unit} × bottom width ${convertToDisplay(c.mainUpperPanel.bottomWidth).toFixed(precision)} ${unit} × height ${convertToDisplay(c.mainUpperPanel.height).toFixed(precision)} ${unit}`
             });
             rows.push({
                 name: 'Cylinder panel (rectangle)',
                 count: c.cylinderPanel.count,
-                dim: `width ${c.cylinderPanel.topWidth.toFixed(1)} mm × height ${c.cylinderPanel.height.toFixed(1)} mm`
+                dim: `width ${convertToDisplay(c.cylinderPanel.topWidth).toFixed(precision)} ${unit} × height ${convertToDisplay(c.cylinderPanel.height).toFixed(precision)} ${unit}`
             });
             rows.push({
                 name: 'Main lower cone panel (trapezoid)',
                 count: c.mainLowerPanel.count,
-                dim: `top width ${c.mainLowerPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainLowerPanel.bottomWidth.toFixed(1)} mm × height ${c.mainLowerPanel.height.toFixed(1)} mm`
+                dim: `top width ${convertToDisplay(c.mainLowerPanel.topWidth).toFixed(precision)} ${unit} × bottom width ${convertToDisplay(c.mainLowerPanel.bottomWidth).toFixed(precision)} ${unit} × height ${convertToDisplay(c.mainLowerPanel.height).toFixed(precision)} ${unit}`
             });
 
             if (c.holeCount > 0) {
                 rows.push({
                     name: 'Window holes (on cylinder)',
                     count: c.holeCount,
-                    dim: `diameter ${c.holeDia} mm around cylinder circumference`
+                    dim: `diameter ${convertToDisplay(c.holeDia).toFixed(precision)} ${unit} around cylinder circumference`
                 });
             }
 
@@ -562,6 +626,15 @@
             const a = document.createElement('a'); a.href = url; a.download = 'ufo_panels.svg'; document.body.appendChild(a); a.click(); a.remove();
         }
 
+        // Unit toggle handler
+        function handleUnitToggle() {
+            const toggle = document.getElementById('unitToggle');
+            isMetric = toggle.value === 'metric';
+            updateUnitLabels();
+            convertAllInputs();
+            render();
+        }
+
         // live updates
         // Auto-update on all parameter changes
         const allInputs = ['smallDiameter', 'mainOuterDiameter', 'mainInnerDiameter', 'topConeHeight', 'mainUpperHeight', 'cylinderHeight', 'mainLowerHeight', 'nSmall', 'nMain', 'holeDia', 'lineColor', 'smallTopColor', 'mainUpperColor', 'cylinderColor', 'mainLowerColor'];
@@ -572,6 +645,10 @@
                 element.addEventListener('change', render);
             }
         });
+
+        // Add unit toggle listener
+        document.getElementById('unitToggle').addEventListener('change', handleUnitToggle);
+
         // initial
         render();
     </script>
