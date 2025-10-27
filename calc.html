@@ -281,14 +281,31 @@
             const mainOuterR = c.R_mainOuter * scale;
             const smallR = c.R_small * scale;
 
-            // Main inner circle (cylinder section)
+            // Main inner circle (cylinder section) - light blue
             svg.appendChild(circle(cx, cy, mainInnerR, '#e6f3ff', '#bbb', 1));
 
-            // Main outer circle (cone transitions)
+            // Main outer circle (cone transitions) - light gray
             svg.appendChild(circle(cx, cy, mainOuterR, '#f6f6f6', '#bbb', 1));
 
-            // Small top cap
-            svg.appendChild(circle(cx, cy, smallR, '#eee', '#bbb', 1));
+            // Small top cap - light gray
+            svg.appendChild(circle(cx, cy, smallR, '#f0f0f0', '#bbb', 1));
+
+            // Add colored rings for each section using paths
+            // Small-top cone ring (between small and main outer) - light green
+            const smallTopRing = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            smallTopRing.setAttribute('d', `M ${cx - mainOuterR},${cy} A ${mainOuterR},${mainOuterR} 0 0,1 ${cx + mainOuterR},${cy} A ${mainOuterR},${mainOuterR} 0 0,1 ${cx - mainOuterR},${cy} M ${cx - smallR},${cy} A ${smallR},${smallR} 0 0,0 ${cx + smallR},${cy} A ${smallR},${smallR} 0 0,0 ${cx - smallR},${cy} Z`);
+            smallTopRing.setAttribute('fill', '#e8f5e8');
+            smallTopRing.setAttribute('stroke', '#bbb');
+            smallTopRing.setAttribute('stroke-width', '1');
+            svg.appendChild(smallTopRing);
+
+            // Main upper cone ring (between main outer and main inner) - light orange  
+            const mainUpperRing = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            mainUpperRing.setAttribute('d', `M ${cx - mainInnerR},${cy} A ${mainInnerR},${mainInnerR} 0 0,1 ${cx + mainInnerR},${cy} A ${mainInnerR},${mainInnerR} 0 0,1 ${cx - mainInnerR},${cy} M ${cx - mainOuterR},${cy} A ${mainOuterR},${mainOuterR} 0 0,0 ${cx + mainOuterR},${cy} A ${mainOuterR},${mainOuterR} 0 0,0 ${cx - mainOuterR},${cy} Z`);
+            mainUpperRing.setAttribute('fill', '#ffe8d1');
+            mainUpperRing.setAttribute('stroke', '#bbb');
+            mainUpperRing.setAttribute('stroke-width', '1');
+            svg.appendChild(mainUpperRing);
 
             // Panel divisions for main sections (from main outer to main inner)
             for (let i = 0; i < c.cylinderPanel.count; i++) {
@@ -350,7 +367,7 @@
             const mainUpperTopY = cylinderTopY - hMainUpper; // Main upper cone ends here
             const topConeTopY = mainUpperTopY - hTopCone; // Top cone ends here
 
-            // Draw main lower cone (trapezoid from main inner to main outer)
+            // Draw main lower cone (trapezoid from main inner to main outer) - light orange
             const mainLowerTrapezoid = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             mainLowerTrapezoid.setAttribute('points',
                 `${centerX - rMainInner},${cylinderBottomY} ` +
@@ -358,7 +375,7 @@
                 `${centerX + rMainOuter},${baseY} ` +
                 `${centerX - rMainOuter},${baseY}`
             );
-            mainLowerTrapezoid.setAttribute('fill', '#f6f6f6');
+            mainLowerTrapezoid.setAttribute('fill', '#ffe8d1');
             mainLowerTrapezoid.setAttribute('stroke', '#bbb');
             mainLowerTrapezoid.setAttribute('stroke-width', '2');
             svg.appendChild(mainLowerTrapezoid);
@@ -374,7 +391,7 @@
             cylinderRect.setAttribute('stroke-width', '2');
             svg.appendChild(cylinderRect);
 
-            // Draw main upper cone (trapezoid from main outer to main inner)
+            // Draw main upper cone (trapezoid from main outer to main inner) - light orange
             const mainUpperTrapezoid = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             mainUpperTrapezoid.setAttribute('points',
                 `${centerX - rMainOuter},${mainUpperTopY} ` +
@@ -382,12 +399,12 @@
                 `${centerX + rMainInner},${cylinderTopY} ` +
                 `${centerX - rMainInner},${cylinderTopY}`
             );
-            mainUpperTrapezoid.setAttribute('fill', '#f6f6f6');
+            mainUpperTrapezoid.setAttribute('fill', '#ffe8d1');
             mainUpperTrapezoid.setAttribute('stroke', '#bbb');
             mainUpperTrapezoid.setAttribute('stroke-width', '2');
             svg.appendChild(mainUpperTrapezoid);
 
-            // Draw top cone (trapezoid from small to main outer)
+            // Draw top cone (trapezoid from small to main outer) - light green
             const topConeTrapezoid = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             topConeTrapezoid.setAttribute('points',
                 `${centerX - rSmall},${topConeTopY} ` +
@@ -395,7 +412,7 @@
                 `${centerX + rMainOuter},${mainUpperTopY} ` +
                 `${centerX - rMainOuter},${mainUpperTopY}`
             );
-            topConeTrapezoid.setAttribute('fill', '#eee');
+            topConeTrapezoid.setAttribute('fill', '#e8f5e8');
             topConeTrapezoid.setAttribute('stroke', '#bbb');
             topConeTrapezoid.setAttribute('stroke-width', '2');
             svg.appendChild(topConeTrapezoid);
