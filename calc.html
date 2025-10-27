@@ -123,8 +123,6 @@
             </div>
             <div class="row"><label>Hole diameter for windows (mm)</label><input id="holeDia" type="number"
                     value="25.4"></div>
-            <div class="row"><label>Hole spacing (mm) - minimum center-to-center (auto-fit if 0)</label><input
-                    id="holeSpacing" type="number" value="0"></div>
         </div>
     </div>
     <div style="margin-top:12px;display:flex;gap:12px;align-items:center">
@@ -186,7 +184,6 @@
             const nSmall = Math.max(3, Math.round(mm(document.getElementById('nSmall').value)));
             const nMain = Math.max(3, Math.round(mm(document.getElementById('nMain').value)));
             const holeDia = mm(document.getElementById('holeDia').value);
-            const holeSpacing = mm(document.getElementById('holeSpacing').value);
 
             // Radii
             const R_small = dSmall / 2;
@@ -492,7 +489,7 @@
 
         // live updates
         // Auto-update on all parameter changes
-        const allInputs = ['smallDiameter', 'mainOuterDiameter', 'mainInnerDiameter', 'topConeHeight', 'mainUpperHeight', 'cylinderHeight', 'mainLowerHeight', 'nSmall', 'nMain', 'holeDia', 'holeSpacing'];
+        const allInputs = ['smallDiameter', 'mainOuterDiameter', 'mainInnerDiameter', 'topConeHeight', 'mainUpperHeight', 'cylinderHeight', 'mainLowerHeight', 'nSmall', 'nMain', 'holeDia'];
         allInputs.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
