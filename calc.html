@@ -425,22 +425,22 @@
             rows.push({
                 name: 'Top cone panel (trapezoid)',
                 count: c.topConePanel.count,
-                dim: `top width ${c.topConePanel.topWidth.toFixed(1)} mm × bottom width ${c.topConePanel.bottomWidth.toFixed(1)} mm × height ${c.topConePanel.height} mm (+ tab ${c.topConePanel.tabWidth} mm)`
+                dim: `top width ${c.topConePanel.topWidth.toFixed(1)} mm × bottom width ${c.topConePanel.bottomWidth.toFixed(1)} mm × height ${c.topConePanel.height.toFixed(1)} mm (+ tab ${c.topConePanel.tabWidth} mm)`
             });
             rows.push({
                 name: 'Main upper cone panel (trapezoid)',
                 count: c.mainUpperPanel.count,
-                dim: `top width ${c.mainUpperPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainUpperPanel.bottomWidth.toFixed(1)} mm × height ${c.mainUpperPanel.height} mm (+ tab ${c.mainUpperPanel.tabWidth} mm)`
+                dim: `top width ${c.mainUpperPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainUpperPanel.bottomWidth.toFixed(1)} mm × height ${c.mainUpperPanel.height.toFixed(1)} mm (+ tab ${c.mainUpperPanel.tabWidth} mm)`
             });
             rows.push({
                 name: 'Cylinder panel (rectangle)',
                 count: c.cylinderPanel.count,
-                dim: `width ${c.cylinderPanel.topWidth.toFixed(1)} mm × height ${c.cylinderPanel.height} mm (+ tab ${c.cylinderPanel.tabWidth} mm)`
+                dim: `width ${c.cylinderPanel.topWidth.toFixed(1)} mm × height ${c.cylinderPanel.height.toFixed(1)} mm (+ tab ${c.cylinderPanel.tabWidth} mm)`
             });
             rows.push({
                 name: 'Main lower cone panel (trapezoid)',
                 count: c.mainLowerPanel.count,
-                dim: `top width ${c.mainLowerPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainLowerPanel.bottomWidth.toFixed(1)} mm × height ${c.mainLowerPanel.height} mm (+ tab ${c.mainLowerPanel.tabWidth} mm)`
+                dim: `top width ${c.mainLowerPanel.topWidth.toFixed(1)} mm × bottom width ${c.mainLowerPanel.bottomWidth.toFixed(1)} mm × height ${c.mainLowerPanel.height.toFixed(1)} mm (+ tab ${c.mainLowerPanel.tabWidth} mm)`
             });
 
             if (c.holeCount > 0) {
